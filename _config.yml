@@ -1,0 +1,16 @@
+title: GoHyperrr
+email: info@gohyperrr.com
+description: >-
+  The high-performance, event-native commerce OS for AI agents and distributed teams.
+baseurl: ""
+url: "https://gohyperrr.github.io"
+twitter_username: gohyperrr
+github_username: GoHyperrr
+
+markdown: kramdown
+theme: null
+exclude:
+  - Gemfile
+  - Gemfile.lock
+  - node_modules/
+  - vendor/

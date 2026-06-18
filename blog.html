@@ -1,0 +1,24 @@
+---
+layout: default
+title: Blog Updates
+permalink: /blog.html
+---
+<div class="blog-container">
+    <h1 class="page-title">Blog Updates</h1>
+    <p style="color: var(--text-secondary); margin-bottom: 32px;">Stay up-to-date with releases, guides, and engineering logs from the GoHyperrr team.</p>
+
+    <div class="blog-grid">
+        {% for post in site.posts %}
+            <a href="{{ post.url | relative_url }}" class="glass-card post-card">
+                <span class="post-card-date">{{ post.date | date: "%B %d, %Y" }}</span>
+                <h3>{{ post.title }}</h3>
+                <p>{{ post.description | default: post.content | strip_html | truncatewords: 25 }}</p>
+                <span class="post-card-link">Read Article →</span>
+            </a>
+        {% empty %}
+            <div class="glass-card" style="grid-column: 1 / -1; padding: 48px; text-align: center; color: var(--text-secondary);">
+                No articles published yet. Stay tuned!
+            </div>
+        {% endfor %}
+    </div>
+</div>
