@@ -1,25 +1,10 @@
-<footer class="site-footer">
-    <div class="footer-container">
-        <div class="footer-info">
-            <span class="footer-logo">⌘</span>
-            <p class="footer-desc">The high-performance, event-native commerce OS for AI agents.</p>
-        </div>
-        <div class="footer-links">
-            <div class="footer-col">
-                <h4>Ecosystem</h4>
-                <a href="https://github.com/GoHyperrr/hyperrr" target="_blank">Core Gateway</a>
-                <a href="https://github.com/GoHyperrr/mdk" target="_blank">MDK SDK</a>
-                <a href="https://github.com/GoHyperrr/commerce" target="_blank">Commerce Modules</a>
-            </div>
-            <div class="footer-col">
-                <h4>Resources</h4>
-                <a href="{{ '/docs/' | relative_url }}">Documentation</a>
-                <a href="{{ '/blog.html' | relative_url }}">Blog Updates</a>
-                <a href="https://github.com/GoHyperrr" target="_blank">Organization</a>
-            </div>
-        </div>
-    </div>
-    <div class="footer-bottom">
-        <p>&copy; {{ site.time | date: "%Y" }} GoHyperrr. Licensed under the MIT License.</p>
-    </div>
+<footer class="px-6 md:px-12 py-10 border-t border-gray-3 bg-black flex items-center justify-between flex-wrap gap-5">
+  <a href="{{ '/' | relative_url }}" class="footer-logo font-mono font-bold text-[1rem] text-white no-underline">hyperrr<span class="text-lime">.</span></a>
+  <ul class="footer-links flex gap-7 list-none flex-wrap">
+    <li><a href="{{ '/docs/' | relative_url }}" class="text-[12.8px] text-gray-5 no-underline transition-colors duration-200 hover:text-white">Docs</a></li>
+    <li><a href="{{ '/blog.html' | relative_url }}" class="text-[12.8px] text-gray-5 no-underline transition-colors duration-200 hover:text-white">Blog</a></li>
+    <li><a href="https://github.com/GoHyperrr/hyperrr" target="_blank" class="text-[12.8px] text-gray-5 no-underline transition-colors duration-200 hover:text-white">GitHub</a></li>
+    <li><a href="https://github.com/GoHyperrr/mdk" target="_blank" class="text-[12.8px] text-gray-5 no-underline transition-colors duration-200 hover:text-white">MDK</a></li>
+  </ul>
+  <div class="footer-copy font-mono text-[10.5px] text-gray-4 tracking-wide">v0.1.0 — MIT License</div>
 </footer>

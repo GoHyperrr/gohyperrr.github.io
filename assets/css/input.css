@@ -1,0 +1,75 @@
+@import "tailwindcss";
+
+@theme {
+  --color-lime: #D7FF00;
+  --color-blue: #1550FF;
+  --color-black: #050505;
+  --color-white: #F5F5F5;
+  --color-purple: #B68DFF;
+  --color-gray-1: #0D0D0D;
+  --color-gray-2: #1A1A1A;
+  --color-gray-3: #2A2A2A;
+  --color-gray-4: #555555;
+  --color-gray-5: #888888;
+  
+  --font-sans: "Space Grotesk", sans-serif;
+  --font-mono: "Space Mono", monospace;
+}
+
+/* Base custom styles */
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background: var(--color-black);
+  color: var(--color-white);
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+  pointer-events: none;
+  z-index: 9999;
+  opacity: 0.35;
+}
+
+/* Animations helper */
+@keyframes ticker {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+
+.animate-ticker {
+  animation: ticker 28s linear infinite;
+}
+
+.animate-ticker:hover {
+  animation-play-state: paused;
+}
+
+/* Pulse border helper for running nodes */
+@keyframes pulse-border {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(21, 80, 255, 0.4); }
+  50% { box-shadow: 0 0 0 5px rgba(21, 80, 255, 0.08); }
+}
+
+.animate-pulse-border {
+  animation: pulse-border 1.5s ease-in-out infinite;
+}
+
+/* Custom transitions and states */
+.reveal {
+  opacity: 0;
+  transform: translateY(22px);
+  transition: opacity 0.65s ease, transform 0.65s ease;
+}
+
+.reveal.visible {
+  opacity: 1;
+  transform: translateY(0);
+}

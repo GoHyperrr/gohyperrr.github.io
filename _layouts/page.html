@@ -1,12 +1,12 @@
 ---
 layout: default
 ---
-<div class="page-container">
+<div class="max-w-[800px] mx-auto px-6 py-16">
     {% if page.title %}
-        <h1 class="page-title">{{ page.title }}</h1>
+        <h1 class="text-[clamp(2rem,4vw,3rem)] font-bold tracking-tighter mb-8 bg-gradient-to-br from-white to-gray-5 bg-clip-text text-transparent">{{ page.title }}</h1>
     {% endif %}
     
-    <div class="page-content">
+    <div class="page-content [&>p]:text-gray-5 [&>p]:text-[15.5px] [&>p]:leading-[1.76] [&>p]:mb-6 [&>p_strong]:text-white [&>p_strong]:font-medium [&>p_a]:text-lime [&>p_a]:no-underline [&>p_a]:border-b [&>p_a]:border-lime/30 [&>p_a]:pb-[1px] [&>p_a:hover]:border-lime [&>h2]:text-[24px] [&>h2]:font-bold [&>h2]:tracking-tight [&>h2]:mt-10 [&>h2]:mb-4 [&>h2]:text-white [&>h3]:text-[18px] [&>h3]:font-semibold [&>h3]:tracking-tight [&>h3]:mt-8 [&>h3]:mb-3 [&>h3]:text-white [&>ul]:list-disc [&>ul]:pl-6 [&>ul]:my-4 [&>ul]:text-gray-5 [&>ol]:list-decimal [&>ol]:pl-6 [&>ol]:my-4 [&>ol]:text-gray-5 [&>li]:mb-2 [&>pre]:bg-gray-1 [&>pre]:border [&>pre]:border-gray-3 [&>pre]:rounded-lg [&>pre]:p-5 [&>pre]:my-6 [&>pre]:overflow-x-auto [&>code]:font-mono [&>code]:text-[13px] [&>code]:bg-white/5 [&>code]:px-1.5 [&>code]:py-0.5 [&>code]:rounded [&>pre_code]:bg-transparent [&>pre_code]:p-0 [&>pre_code]:text-[12.8px] [&>table]:w-full [&>table]:border-collapse [&>table]:my-6 [&>table]:border [&>table]:border-gray-3 [&>table]:rounded-lg [&>table]:overflow-hidden [&>table_th]:bg-gray-2 [&>table_th]:text-gray-5 [&>table_th]:font-semibold [&>table_th]:p-3 [&>table_th]:text-left [&>table_th]:border-b [&>table_th]:border-gray-3 [&>table_td]:p-3 [&>table_td]:border-b [&>table_td]:border-gray-3 [&>table_td]:text-gray-5 [&>table_td]:text-[14px] [&>table_td_code]:bg-white/5 [&>table_td_code]:px-1 [&>table_td_code]:py-0.5 [&>table_td_code]:rounded">
         {{ content }}
     </div>
 </div>
