@@ -1,0 +1,1129 @@
+---
+layout: null
+---
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Hyperrr — AI-Native Commerce Engine</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --lime: #D7FF00;
+      --blue: #1550FF;
+      --black: #050505;
+      --white: #F5F5F5;
+      --purple: #B68DFF;
+      --gray-1: #0D0D0D;
+      --gray-2: #1A1A1A;
+      --gray-3: #2A2A2A;
+      --gray-4: #555;
+      --gray-5: #888;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body {
+      background: var(--black);
+      color: var(--white);
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 16px;
+      line-height: 1.6;
+      overflow-x: hidden;
+      -webkit-font-smoothing: antialiased;
+    }
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+      pointer-events: none;
+      z-index: 9999;
+      opacity: 0.35;
+    }
+
+    /* ── NAV ── */
+    nav {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 200;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 18px 48px;
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+      background: rgba(5,5,5,0.88);
+      backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px);
+    }
+    .nav-logo {
+      font-family: 'Space Mono', monospace; font-weight: 700;
+      font-size: 1.2rem; letter-spacing: -0.02em;
+      color: var(--white); text-decoration: none;
+    }
+    .nav-logo span { color: var(--lime); }
+    .nav-links { display: flex; align-items: center; gap: 32px; list-style: none; }
+    .nav-links a {
+      color: var(--gray-5); text-decoration: none;
+      font-size: 0.875rem; font-weight: 500; transition: color 0.2s;
+    }
+    .nav-links a:hover { color: var(--white); }
+    .nav-cta {
+      background: var(--lime); color: var(--black) !important;
+      padding: 8px 18px; border-radius: 4px;
+      font-weight: 700 !important; font-size: 0.78rem !important;
+      letter-spacing: 0.05em !important; text-transform: uppercase;
+      transition: opacity 0.2s !important;
+    }
+    .nav-cta:hover { opacity: 0.85; }
+    .nav-hamburger {
+      display: none; flex-direction: column; gap: 5px;
+      background: none; border: none; cursor: pointer; padding: 4px;
+    }
+    .nav-hamburger span {
+      display: block; width: 22px; height: 2px;
+      background: var(--white); border-radius: 2px;
+      transition: transform 0.3s, opacity 0.3s;
+    }
+    .nav-mobile {
+      display: none; position: fixed;
+      top: 61px; left: 0; right: 0; z-index: 199;
+      background: rgba(5,5,5,0.97);
+      backdrop-filter: blur(24px);
+      border-bottom: 1px solid var(--gray-3);
+      padding: 24px;
+      flex-direction: column; gap: 0;
+    }
+    .nav-mobile.open { display: flex; }
+    .nav-mobile a {
+      color: var(--gray-5); text-decoration: none;
+      font-size: 1rem; font-weight: 500;
+      padding: 14px 0;
+      border-bottom: 1px solid var(--gray-3);
+      display: block; transition: color 0.2s;
+    }
+    .nav-mobile a:last-child { border-bottom: none; color: var(--lime); font-weight: 700; }
+    .nav-mobile a:hover { color: var(--white); }
+
+    /* ── HERO ── */
+    .hero {
+      min-height: 100svh;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      align-items: center;
+      gap: 48px;
+      padding: 120px 48px 80px;
+      position: relative;
+      overflow: hidden;
+    }
+    .hero-glow {
+      position: absolute; top: -300px; left: -300px;
+      width: 800px; height: 800px;
+      background: radial-gradient(circle, rgba(21,80,255,0.1) 0%, transparent 65%);
+      pointer-events: none;
+    }
+    .hero-glow-2 {
+      position: absolute; bottom: -200px; right: -200px;
+      width: 600px; height: 600px;
+      background: radial-gradient(circle, rgba(182,141,255,0.07) 0%, transparent 65%);
+      pointer-events: none;
+    }
+    .hero-left { position: relative; z-index: 1; }
+    .hero-eyebrow {
+      font-family: 'Space Mono', monospace;
+      font-size: 0.72rem; letter-spacing: 0.18em;
+      text-transform: uppercase; color: var(--lime);
+      margin-bottom: 28px;
+      display: flex; align-items: center; gap: 12px;
+      opacity: 0; transform: translateY(12px);
+      animation: fadeUp 0.6s ease 0.1s forwards;
+    }
+    .hero-eyebrow::before {
+      content: ''; display: block; width: 28px; height: 1px; background: var(--lime);
+    }
+    .hero-headline {
+      font-size: clamp(3rem, 5.5vw, 5.5rem);
+      font-weight: 700; line-height: 0.93; letter-spacing: -0.04em;
+      margin-bottom: 28px;
+      opacity: 0; transform: translateY(16px);
+      animation: fadeUp 0.7s ease 0.2s forwards;
+    }
+    .hero-headline .outline {
+      color: transparent;
+      -webkit-text-stroke: 1.5px rgba(215,255,0,0.45);
+    }
+    .hero-sub {
+      font-size: 1rem; color: var(--gray-5);
+      max-width: 460px; line-height: 1.75; margin-bottom: 44px;
+      opacity: 0; transform: translateY(16px);
+      animation: fadeUp 0.7s ease 0.35s forwards;
+    }
+    .hero-sub strong { color: var(--white); font-weight: 500; }
+    .hero-actions {
+      display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
+      opacity: 0; transform: translateY(16px);
+      animation: fadeUp 0.7s ease 0.5s forwards;
+    }
+    .btn-primary {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: var(--lime); color: var(--black);
+      font-family: 'Space Mono', monospace; font-weight: 700;
+      font-size: 0.75rem; letter-spacing: 0.07em; text-transform: uppercase;
+      padding: 13px 24px; border-radius: 4px; text-decoration: none;
+      transition: transform 0.15s, opacity 0.15s;
+    }
+    .btn-primary:hover { transform: translateY(-2px); opacity: 0.88; }
+    .btn-ghost {
+      display: inline-flex; align-items: center; gap: 8px;
+      color: var(--white); font-family: 'Space Mono', monospace;
+      font-size: 0.75rem; font-weight: 700; letter-spacing: 0.07em;
+      text-transform: uppercase; text-decoration: none;
+      padding: 13px 0; border-bottom: 1px solid var(--gray-3);
+      transition: border-color 0.2s;
+    }
+    .btn-ghost:hover { border-color: var(--white); }
+    @keyframes fadeUp {
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ── CANVAS ANIMATION PANEL ── */
+    .hero-right {
+      position: relative; z-index: 1;
+      display: flex; align-items: center; justify-content: center;
+      opacity: 0; animation: fadeUp 0.9s ease 0.4s forwards;
+    }
+    #block-canvas {
+      width: 100%; max-width: 520px; height: 480px;
+      border-radius: 12px;
+      border: 1px solid var(--gray-3);
+      background: var(--gray-1);
+      box-shadow: 0 48px 100px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.03);
+      display: block;
+    }
+
+    /* ── TICKER ── */
+    .ticker {
+      border-top: 1px solid var(--gray-3); border-bottom: 1px solid var(--gray-3);
+      overflow: hidden; padding: 13px 0; background: var(--gray-1);
+    }
+    .ticker-track {
+      display: flex; animation: ticker 28s linear infinite; white-space: nowrap;
+    }
+    .ticker-track:hover { animation-play-state: paused; }
+    .ticker-item {
+      display: inline-flex; align-items: center; gap: 10px;
+      padding: 0 32px;
+      font-family: 'Space Mono', monospace; font-size: 0.68rem;
+      letter-spacing: 0.08em; color: var(--gray-4); text-transform: uppercase;
+    }
+    .ticker-dot { width: 4px; height: 4px; border-radius: 50%; background: var(--lime); flex-shrink: 0; }
+    @keyframes ticker { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+
+    /* ── SECTIONS ── */
+    section { padding: 100px 48px; }
+    .section-eyebrow {
+      font-family: 'Space Mono', monospace; font-size: 0.68rem;
+      letter-spacing: 0.18em; text-transform: uppercase;
+      color: var(--gray-4); margin-bottom: 20px;
+    }
+    .section-title {
+      font-size: clamp(2rem, 3.5vw, 3.2rem); font-weight: 700;
+      letter-spacing: -0.03em; line-height: 1.05; margin-bottom: 16px;
+    }
+    .section-sub { font-size: 0.95rem; color: var(--gray-5); max-width: 460px; line-height: 1.78; }
+    .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 72px; align-items: end; }
+    .inner { max-width: 1200px; margin: 0 auto; }
+
+    /* ── DOCTRINE ── */
+    .doctrine { background: var(--gray-1); border-top: 1px solid var(--gray-3); border-bottom: 1px solid var(--gray-3); }
+    .doctrine-quote {
+      font-size: clamp(1.35rem, 2.2vw, 1.85rem); font-weight: 600;
+      line-height: 1.38; letter-spacing: -0.02em;
+      padding-left: 24px; border-left: 3px solid var(--lime);
+    }
+    .doctrine-desc { color: var(--gray-5); line-height: 1.82; font-size: 0.93rem; }
+    .doctrine-desc p + p { margin-top: 14px; }
+
+    /* ── ARCH GRID ── */
+    .arch-grid {
+      margin-top: 52px;
+      display: grid; grid-template-columns: repeat(3, 1fr);
+      gap: 1px; background: var(--gray-3);
+      border: 1px solid var(--gray-3); border-radius: 8px; overflow: hidden;
+    }
+    .arch-card {
+      background: var(--gray-1); padding: 32px 28px;
+      transition: background 0.2s;
+    }
+    .arch-card:hover { background: var(--gray-2); }
+    .arch-icon { font-size: 1.4rem; margin-bottom: 16px; }
+    .arch-card-title { font-weight: 600; font-size: 0.95rem; margin-bottom: 8px; letter-spacing: -0.01em; }
+    .arch-card-body { font-size: 0.83rem; color: var(--gray-5); line-height: 1.72; }
+    .arch-tag {
+      display: inline-block; margin-top: 14px;
+      font-family: 'Space Mono', monospace; font-size: 0.62rem;
+      letter-spacing: 0.08em; text-transform: uppercase;
+      padding: 3px 8px; border-radius: 3px;
+    }
+
+    /* ── WORKFLOW VIZ ── */
+    .wf-outer { padding-top: 0; padding-bottom: 100px; }
+    .workflow-viz {
+      max-width: 1200px; margin: 0 auto;
+      background: var(--gray-1); border: 1px solid var(--gray-3);
+      border-radius: 10px; padding: 36px;
+      position: relative; overflow: hidden;
+    }
+    .workflow-viz::before {
+      content: ''; position: absolute; inset: 0;
+      background: radial-gradient(ellipse at 50% 110%, rgba(21,80,255,0.08) 0%, transparent 60%);
+      pointer-events: none;
+    }
+    .wf-title {
+      font-family: 'Space Mono', monospace; font-size: 0.66rem;
+      letter-spacing: 0.12em; text-transform: uppercase;
+      color: var(--gray-4); margin-bottom: 28px;
+    }
+    .wf-dag { display: flex; align-items: center; gap: 0; overflow-x: auto; padding-bottom: 4px; }
+    .wf-node { display: flex; flex-direction: column; align-items: center; flex-shrink: 0; }
+    .wf-box {
+      background: var(--gray-2); border: 1px solid var(--gray-3);
+      border-radius: 6px; padding: 9px 14px;
+      font-family: 'Space Mono', monospace; font-size: 0.62rem;
+      letter-spacing: 0.03em; white-space: nowrap;
+    }
+    .wf-box.done { border-color: #28C840; color: #28C840; }
+    .wf-box.running { border-color: var(--blue); color: #7BA0FF; animation: pulse-border 1.5s ease-in-out infinite; }
+    .wf-box.waiting { border-color: var(--lime); color: var(--lime); }
+    .wf-box.pending { color: var(--gray-4); }
+    @keyframes pulse-border {
+      0%,100% { box-shadow: 0 0 0 0 rgba(21,80,255,0.4); }
+      50% { box-shadow: 0 0 0 5px rgba(21,80,255,0.08); }
+    }
+    .wf-status { font-size: 0.52rem; margin-top: 4px; letter-spacing: 0.08em; text-transform: uppercase; opacity: 0.6; }
+    .wf-arrow { padding: 0 8px; color: var(--gray-4); font-size: 0.8rem; margin-bottom: 18px; flex-shrink: 0; }
+    .wf-branch { display: flex; flex-direction: column; gap: 10px; align-items: center; }
+    .wf-branch-row { display: flex; gap: 10px; }
+    .wf-legend { margin-top: 28px; display: flex; gap: 24px; flex-wrap: wrap; }
+    .wf-legend span {
+      font-family: 'Space Mono', monospace; font-size: 0.62rem;
+      display: flex; align-items: center; gap: 6px; color: var(--gray-5);
+    }
+    .wf-legend i { width: 8px; height: 8px; border-radius: 2px; display: inline-block; flex-shrink: 0; }
+
+    /* ── HOW ── */
+    .how-bg { background: var(--gray-1); border-top: 1px solid var(--gray-3); border-bottom: 1px solid var(--gray-3); }
+    .how-steps { display: grid; grid-template-columns: 1fr 1fr; gap: 44px 72px; margin-top: 56px; }
+    .step-num { font-family: 'Space Mono', monospace; font-size: 0.66rem; letter-spacing: 0.12em; color: var(--lime); opacity: 0.7; margin-bottom: 12px; }
+    .step-title { font-size: 1.05rem; font-weight: 600; letter-spacing: -0.01em; margin-bottom: 9px; }
+    .step-body { font-size: 0.84rem; color: var(--gray-5); line-height: 1.74; }
+    .mono { font-family: 'Space Mono', monospace; }
+    .lime { color: var(--lime); }
+
+    /* ── MODULES ── */
+    .modules-bg { background: var(--gray-1); border-top: 1px solid var(--gray-3); border-bottom: 1px solid var(--gray-3); }
+    .module-pills { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 24px; }
+    .module-pill {
+      font-family: 'Space Mono', monospace; font-size: 0.67rem;
+      letter-spacing: 0.05em; padding: 5px 12px;
+      border-radius: 100px; border: 1px solid; transition: transform 0.2s; cursor: default;
+    }
+    .module-pill:hover { transform: translateY(-2px); }
+    .pill-lime { border-color: rgba(215,255,0,0.3); color: var(--lime); background: rgba(215,255,0,0.06); }
+    .pill-blue { border-color: rgba(21,80,255,0.35); color: #7BA0FF; background: rgba(21,80,255,0.07); }
+    .pill-purple { border-color: rgba(182,141,255,0.3); color: var(--purple); background: rgba(182,141,255,0.06); }
+    .pill-white { border-color: rgba(255,255,255,0.13); color: var(--gray-5); background: rgba(255,255,255,0.04); }
+    .mdk-code { background: var(--black); border: 1px solid var(--gray-3); border-radius: 8px; overflow: hidden; }
+    .code-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 11px 18px; background: var(--gray-2); border-bottom: 1px solid var(--gray-3);
+    }
+    .code-lang, .code-file { font-family: 'Space Mono', monospace; font-size: 0.62rem; letter-spacing: 0.08em; color: var(--gray-5); }
+    pre { padding: 22px 18px; font-family: 'Space Mono', monospace; font-size: 0.7rem; line-height: 1.88; overflow-x: auto; }
+    .c-kw { color: #7BA0FF; } .c-fn { color: var(--lime); } .c-type { color: var(--purple); }
+    .c-str { color: #FFA07A; } .c-comment { color: var(--gray-4); } .c-pkg { color: #7BA0FF; }
+
+    /* ── STACK ── */
+    .stack-layers { display: flex; flex-direction: column; gap: 2px; margin-top: 36px; }
+    .stack-layer {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 14px 18px; background: var(--gray-2);
+      border: 1px solid var(--gray-3); border-radius: 4px;
+      transition: border-color 0.2s, background 0.2s; cursor: default;
+    }
+    .stack-layer:hover { border-color: var(--gray-4); background: var(--gray-3); }
+    .stack-layer-name { font-weight: 600; font-size: 0.84rem; }
+    .stack-layer-desc { font-size: 0.72rem; color: var(--gray-5); margin-top: 2px; }
+    .stack-badge {
+      font-family: 'Space Mono', monospace; font-size: 0.58rem;
+      letter-spacing: 0.08em; text-transform: uppercase;
+      padding: 3px 7px; border-radius: 3px; flex-shrink: 0; margin-left: 12px;
+    }
+    .badge-pluggable { background: rgba(21,80,255,0.13); color: #7BA0FF; border: 1px solid rgba(21,80,255,0.28); }
+    .badge-core { background: rgba(215,255,0,0.09); color: var(--lime); border: 1px solid rgba(215,255,0,0.22); }
+    .badge-ai { background: rgba(182,141,255,0.09); color: var(--purple); border: 1px solid rgba(182,141,255,0.22); }
+    .stack-right { display: flex; flex-direction: column; gap: 20px; }
+    .stack-fact {
+      padding: 24px; background: var(--gray-2); border: 1px solid var(--gray-3); border-radius: 6px;
+    }
+    .stack-fact-num { font-size: 2.4rem; font-weight: 700; letter-spacing: -0.04em; line-height: 1; margin-bottom: 5px; }
+    .stack-fact-label { font-size: 0.78rem; color: var(--gray-5); line-height: 1.55; }
+
+    /* ── CTA ── */
+    .cta-section {
+      background: var(--lime); padding: 112px 48px;
+      position: relative; overflow: hidden;
+    }
+    .cta-section::before {
+      content: 'HYPERRR';
+      position: absolute; right: -60px; top: 50%; transform: translateY(-50%);
+      font-family: 'Space Mono', monospace; font-size: min(18vw, 200px);
+      font-weight: 700; color: rgba(0,0,0,0.06); letter-spacing: -0.04em;
+      pointer-events: none; white-space: nowrap;
+    }
+    .cta-inner { max-width: 800px; position: relative; z-index: 1; }
+    .cta-label { font-family: 'Space Mono', monospace; font-size: 0.68rem; letter-spacing: 0.18em; text-transform: uppercase; color: rgba(0,0,0,0.45); margin-bottom: 20px; }
+    .cta-headline { font-size: clamp(2.2rem, 5vw, 4.8rem); font-weight: 700; letter-spacing: -0.04em; line-height: 0.95; color: var(--black); margin-bottom: 44px; }
+    .cta-actions { display: flex; gap: 14px; flex-wrap: wrap; }
+    .btn-dark {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: var(--black); color: var(--lime);
+      font-family: 'Space Mono', monospace; font-weight: 700; font-size: 0.75rem;
+      letter-spacing: 0.07em; text-transform: uppercase; padding: 13px 24px;
+      border-radius: 4px; text-decoration: none; transition: transform 0.15s, opacity 0.15s;
+    }
+    .btn-dark:hover { transform: translateY(-2px); }
+    .btn-outline-dark {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: transparent; color: var(--black);
+      font-family: 'Space Mono', monospace; font-weight: 700; font-size: 0.75rem;
+      letter-spacing: 0.07em; text-transform: uppercase; padding: 13px 24px;
+      border-radius: 4px; border: 2px solid rgba(0,0,0,0.22); text-decoration: none;
+      transition: border-color 0.2s;
+    }
+    .btn-outline-dark:hover { border-color: rgba(0,0,0,0.6); }
+
+    /* ── FOOTER ── */
+    footer {
+      padding: 40px 48px;
+      border-top: 1px solid var(--gray-3);
+      display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 20px;
+    }
+    .footer-logo { font-family: 'Space Mono', monospace; font-weight: 700; font-size: 1rem; color: var(--white); text-decoration: none; }
+    .footer-logo span { color: var(--lime); }
+    .footer-links { display: flex; gap: 28px; list-style: none; flex-wrap: wrap; }
+    .footer-links a { font-size: 0.8rem; color: var(--gray-5); text-decoration: none; transition: color 0.2s; }
+    .footer-links a:hover { color: var(--white); }
+    .footer-copy { font-family: 'Space Mono', monospace; font-size: 0.62rem; color: var(--gray-4); letter-spacing: 0.04em; }
+
+    /* ── REVEAL ── */
+    .reveal { opacity: 0; transform: translateY(22px); transition: opacity 0.65s ease, transform 0.65s ease; }
+    .reveal.visible { opacity: 1; transform: translateY(0); }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 1024px) {
+      .hero { grid-template-columns: 1fr; min-height: auto; padding: 110px 32px 72px; gap: 56px; }
+      .hero-headline { font-size: clamp(3rem, 8vw, 5rem); }
+      #block-canvas { max-width: 100%; height: 360px; }
+      .arch-grid { grid-template-columns: 1fr 1fr; }
+      .two-col { grid-template-columns: 1fr; gap: 40px; }
+      section { padding: 80px 32px; }
+      .how-steps { grid-template-columns: 1fr; gap: 36px; }
+    }
+    @media (max-width: 768px) {
+      nav { padding: 16px 20px; }
+      .nav-links { display: none; }
+      .nav-hamburger { display: flex; }
+      section, footer, .cta-section { padding-left: 20px; padding-right: 20px; }
+      .hero { padding: 100px 20px 60px; }
+      .hero-headline { font-size: clamp(2.6rem, 11vw, 4rem); }
+      .hero-sub { font-size: 0.95rem; }
+      #block-canvas { height: 300px; }
+      .arch-grid { grid-template-columns: 1fr; }
+      .wf-dag { flex-wrap: nowrap; }
+      .cta-section { padding-top: 80px; padding-bottom: 80px; }
+      .cta-section::before { display: none; }
+      footer { flex-direction: column; align-items: flex-start; }
+      .footer-links { gap: 16px; }
+    }
+    @media (max-width: 480px) {
+      .hero-headline { font-size: clamp(2.2rem, 12vw, 3rem); }
+      .how-steps { grid-template-columns: 1fr; }
+      .stack-fact-num { font-size: 2rem; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .ticker-track { animation: none; }
+      * { transition: none !important; animation: none !important; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <a href="#" class="nav-logo">hyperrr<span>.</span></a>
+  <ul class="nav-links">
+    <li><a href="#architecture">Architecture</a></li>
+    <li><a href="#modules">Modules</a></li>
+    <li><a href="#infra">Infrastructure</a></li>
+    <li><a href="{{ '/docs/' | relative_url }}">Docs</a></li>
+    <li><a href="{{ '/blog.html' | relative_url }}">Blog</a></li>
+    <li><a href="https://github.com/GoHyperrr/hyperrr" target="_blank">GitHub</a></li>
+    <li><a href="https://github.com/GoHyperrr" target="_blank" class="nav-cta">Get Started →</a></li>
+  </ul>
+  <button class="nav-hamburger" id="hamburger" aria-label="Open menu">
+    <span></span><span></span><span></span>
+  </button>
+</nav>
+<nav class="nav-mobile" id="nav-mobile">
+  <a href="#architecture" onclick="closeMobileNav()">Architecture</a>
+  <a href="#modules" onclick="closeMobileNav()">Modules</a>
+  <a href="#infra" onclick="closeMobileNav()">Infrastructure</a>
+  <a href="{{ '/docs/' | relative_url }}">Docs</a>
+  <a href="{{ '/blog.html' | relative_url }}">Blog</a>
+  <a href="https://github.com/GoHyperrr/hyperrr" target="_blank">GitHub</a>
+  <a href="https://github.com/GoHyperrr" target="_blank">Get Started →</a>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-glow"></div>
+  <div class="hero-glow-2"></div>
+
+  <div class="hero-left">
+    <div class="hero-eyebrow">v0.1.0 — Open Source</div>
+    <h1 class="hero-headline">
+      Commerce that<br/><span class="outline">thinks</span> for itself.
+    </h1>
+    <p class="hero-sub">
+      An <strong>AI-observable distributed commerce engine</strong> built on deterministic DAG workflows, a real-time event fabric, and a pluggable module runtime. Every operation is auditable, replayable, and AI-ready.
+    </p>
+    <div class="hero-actions">
+      <a href="https://github.com/GoHyperrr/hyperrr" target="_blank" class="btn-primary">
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+        View on GitHub
+      </a>
+      <a href="{{ '/docs/' | relative_url }}" class="btn-ghost">Read the docs →</a>
+    </div>
+  </div>
+
+  <div class="hero-right">
+    <canvas id="block-canvas"></canvas>
+  </div>
+</section>
+
+<!-- TICKER -->
+<div class="ticker">
+  <div class="ticker-track" aria-hidden="true">
+    <span class="ticker-item"><span class="ticker-dot"></span>DAG Workflow Engine</span>
+    <span class="ticker-item"><span class="ticker-dot"></span>Saga Compensation</span>
+    <span class="ticker-item"><span class="ticker-dot"></span>NATS JetStream</span>
+    <span class="ticker-item"><span class="ticker-dot"></span>Model Context Protocol</span>
+    <span class="ticker-item"><span class="ticker-dot"></span>Distributed Locking</span>
+    <span class="ticker-item"><span class="ticker-dot"></span>GraphQL Gateway</span>
+    <span class="ticker-item"><span class="ticker-dot"></span>AI-Observable Lineage</span>
+    <span class="ticker-item"><span class="ticker-dot"></span>Pluggable Modules</span>
+    <span class="ticker-item"><span class="ticker-dot"></span>PostgreSQL + SQLite</span>
+    <span class="ticker-item"><span class="ticker-dot"></span>Event Fabric</span>
+    <span class="ticker-item"><span class="ticker-dot"></span>Human-in-the-Loop</span>
+    <span class="ticker-item"><span class="ticker-dot"></span>Go + GORM</span>
+    <span class="ticker-item"><span class="ticker-dot"></span>DAG Workflow Engine</span>
+    <span class="ticker-item"><span class="ticker-dot"></span>Saga Compensation</span>
+    <span class="ticker-item"><span class="ticker-dot"></span>NATS JetStream</span>
+    <span class="ticker-item"><span class="ticker-dot"></span>Model Context Protocol</span>
+    <span class="ticker-item"><span class="ticker-dot"></span>Distributed Locking</span>
+    <span class="ticker-item"><span class="ticker-dot"></span>GraphQL Gateway</span>
+    <span class="ticker-item"><span class="ticker-dot"></span>AI-Observable Lineage</span>
+    <span class="ticker-item"><span class="ticker-dot"></span>Pluggable Modules</span>
+    <span class="ticker-item"><span class="ticker-dot"></span>PostgreSQL + SQLite</span>
+    <span class="ticker-item"><span class="ticker-dot"></span>Event Fabric</span>
+    <span class="ticker-item"><span class="ticker-dot"></span>Human-in-the-Loop</span>
+    <span class="ticker-item"><span class="ticker-dot"></span>Go + GORM</span>
+  </div>
+</div>
+
+<!-- DOCTRINE -->
+<section class="doctrine">
+  <div class="inner two-col">
+    <div class="reveal">
+      <div class="section-eyebrow">Guiding doctrine</div>
+      <blockquote class="doctrine-quote">
+        "Nothing mutates state directly. Everything flows through workflows and events."
+      </blockquote>
+    </div>
+    <div class="doctrine-desc reveal">
+      <p>In Hyperrr, all state changes go through declarative workflow DAGs. There are no silent mutations, no fire-and-forget side effects, no state you can't trace back to a cause.</p>
+      <p>Every operation — a checkout, a refund, an inventory update — is a deterministic, replayable sequence. That makes your commerce engine observable to humans, auditable by compliance teams, and legible to AI agents without any extra instrumentation.</p>
+      <p>This isn't an add-on. It's the architectural primitive everything else is built on.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ARCHITECTURE -->
+<section id="architecture">
+  <div class="inner">
+    <div class="two-col" style="margin-bottom:52px;">
+      <div>
+        <div class="section-eyebrow reveal">System Architecture</div>
+        <h2 class="section-title reveal">Three layers.<br/>One runtime.</h2>
+      </div>
+      <p class="section-sub reveal">The engine, the fabric, and the observer. Each layer does one job precisely, and all three are available to every module you build.</p>
+    </div>
+    <div class="arch-grid reveal">
+      <div class="arch-card">
+        <div class="arch-icon">⚡</div>
+        <div class="arch-card-title">Workflow Engine</div>
+        <div class="arch-card-body">Executes commerce operations as deterministic DAGs with parallel step resolution, saga compensation on failure, retry budgets, and human-escalation checkpoints.</div>
+        <span class="arch-tag" style="background:rgba(215,255,0,0.07);color:var(--lime);">pkg/workflow</span>
+      </div>
+      <div class="arch-card">
+        <div class="arch-icon">🔌</div>
+        <div class="arch-card-title">Event Fabric</div>
+        <div class="arch-card-body">A typed pub/sub bus connects every module. Events are namespaced, immutable records with full trace IDs. Ships in-memory. Drop in NATS JetStream for production.</div>
+        <span class="arch-tag" style="background:rgba(21,80,255,0.09);color:#7BA0FF;">event-bus</span>
+      </div>
+      <div class="arch-card">
+        <div class="arch-icon">🧠</div>
+        <div class="arch-card-title">Context Engine</div>
+        <div class="arch-card-body">Tracks every workflow step, input, output, and actor in a live lineage graph. Exposes full execution context to AI agents over SSE via Model Context Protocol.</div>
+        <span class="arch-tag" style="background:rgba(182,141,255,0.07);color:var(--purple);">pkg/ctxengine</span>
+      </div>
+      <div class="arch-card">
+        <div class="arch-icon">🔒</div>
+        <div class="arch-card-title">Distributed Locker</div>
+        <div class="arch-card-body">Atomic distributed locks prevent double-processing on concurrent workflow runs. In-memory by default. NATS JetStream KV-backed for multi-node production.</div>
+        <span class="arch-tag" style="background:rgba(255,255,255,0.04);color:var(--gray-5);">pkg/locking</span>
+      </div>
+      <div class="arch-card">
+        <div class="arch-icon">🌐</div>
+        <div class="arch-card-title">GraphQL Gateway</div>
+        <div class="arch-card-body">A unified GraphQL API stitched dynamically from every loaded module's schema. Add a module, its types and mutations are live at /query automatically. No manual wiring.</div>
+        <span class="arch-tag" style="background:rgba(21,80,255,0.09);color:#7BA0FF;">api/graph</span>
+      </div>
+      <div class="arch-card">
+        <div class="arch-icon">🤖</div>
+        <div class="arch-card-title">MCP Agent Gateway</div>
+        <div class="arch-card-body">Automatically translates workflows marked ExposeToAI into tools for LLMs. AI agents discover and call them over SSE. API key auth keeps every invocation scoped and auditable.</div>
+        <span class="arch-tag" style="background:rgba(182,141,255,0.07);color:var(--purple);">api/mcp</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- WORKFLOW VIZ -->
+<section class="wf-outer">
+  <div class="workflow-viz reveal">
+    <div class="wf-title">Order checkout — live DAG execution trace</div>
+    <div class="wf-dag">
+      <div class="wf-node">
+        <div class="wf-box done">validate_cart</div>
+        <div class="wf-status" style="color:#28C840;">completed</div>
+      </div>
+      <div class="wf-arrow">──▶</div>
+      <div class="wf-branch">
+        <div class="wf-branch-row">
+          <div class="wf-node">
+            <div class="wf-box done">reserve_inventory</div>
+            <div class="wf-status" style="color:#28C840;">completed</div>
+          </div>
+          <div class="wf-node">
+            <div class="wf-box done">validate_customer</div>
+            <div class="wf-status" style="color:#28C840;">completed</div>
+          </div>
+        </div>
+      </div>
+      <div class="wf-arrow">──▶</div>
+      <div class="wf-node">
+        <div class="wf-box running">process_payment</div>
+        <div class="wf-status" style="color:#7BA0FF;">running</div>
+      </div>
+      <div class="wf-arrow">──▶</div>
+      <div class="wf-branch">
+        <div class="wf-branch-row">
+          <div class="wf-node">
+            <div class="wf-box pending">ship_order</div>
+            <div class="wf-status">pending</div>
+          </div>
+          <div class="wf-node">
+            <div class="wf-box pending">notify_customer</div>
+            <div class="wf-status">pending</div>
+          </div>
+          <div class="wf-node">
+            <div class="wf-box pending">add_loyalty_pts</div>
+            <div class="wf-status">pending</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="wf-legend">
+      <span><i style="background:#28C840;"></i>completed</span>
+      <span><i style="background:var(--blue);"></i>running</span>
+      <span><i style="background:var(--gray-3);"></i>pending</span>
+      <span><i style="background:var(--lime);"></i>waiting_human</span>
+      <span style="color:var(--gray-4);">Saga compensation fires on any failure →</span>
+    </div>
+  </div>
+</section>
+
+<!-- HOW IT WORKS -->
+<section class="how-bg">
+  <div class="inner">
+    <div class="two-col">
+      <div>
+        <div class="section-eyebrow reveal">How it works</div>
+        <h2 class="section-title reveal">Build a module.<br/>Get everything.</h2>
+      </div>
+      <p class="section-sub reveal">One interface. One registration. Your module gets a shared database, event bus, workflow engine, GraphQL gateway, and MCP agent exposure out of the box.</p>
+    </div>
+    <div class="how-steps">
+      <div class="how-step reveal">
+        <div class="step-num">01 — Implement</div>
+        <div class="step-title">Define your module</div>
+        <div class="step-body">Implement the <span class="mono lime">mdk.Module</span> interface — ID, Models, Routes, Init, Shutdown. Register it in an <span class="mono">init()</span> function. That's the entire contract.</div>
+      </div>
+      <div class="how-step reveal">
+        <div class="step-num">02 — Declare</div>
+        <div class="step-title">Add to hyperrr.yml</div>
+        <div class="step-body">Add your module's import path under <span class="mono lime">modules:</span> in <span class="mono">hyperrr.yml</span>. Run <span class="mono">hyperrr build</span> and the engine auto-discovers, code-generates, and wires it in.</div>
+      </div>
+      <div class="how-step reveal">
+        <div class="step-num">03 — Connect</div>
+        <div class="step-title">Register workflows &amp; handlers</div>
+        <div class="step-body">In your <span class="mono">Init</span>, register DAG workflows and step handlers on <span class="mono lime">rt.Workflows()</span>. Subscribe to events on <span class="mono lime">rt.Bus()</span>. The runtime handles execution, retries, and state.</div>
+      </div>
+      <div class="how-step reveal">
+        <div class="step-num">04 — Expose</div>
+        <div class="step-title">Available to AI automatically</div>
+        <div class="step-body">Set <span class="mono lime">ExposeToAI: true</span> on any workflow and it becomes an MCP tool. AI agents discover and call it over SSE. The lineage engine records every invocation automatically.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- MODULES -->
+<section class="modules-bg" id="modules">
+  <div class="inner">
+    <div class="two-col">
+      <div>
+        <div class="section-eyebrow reveal">Module ecosystem</div>
+        <h2 class="section-title reveal">Commerce, batteries included.</h2>
+        <p class="section-sub reveal" style="margin-top:14px;">Commerce modules ship out of the box. Each is independently versioned, testable, and replaceable.</p>
+        <div class="module-pills reveal">
+          <span class="module-pill pill-lime">commerce.product</span>
+          <span class="module-pill pill-lime">commerce.order</span>
+          <span class="module-pill pill-lime">commerce.cart</span>
+          <span class="module-pill pill-blue">commerce.customer</span>
+          <span class="module-pill pill-blue">commerce.payments</span>
+          <span class="module-pill pill-purple">auth.emailpass</span>
+          <span class="module-pill pill-purple">auth.apikey</span>
+          <span class="module-pill pill-white">commerce.taxonomy</span>
+          <span class="module-pill pill-white">notification</span>
+        </div>
+      </div>
+      <div class="mdk-code reveal">
+        <div class="code-header">
+          <span class="code-lang">Go</span>
+          <span class="code-file">mymodule/module.go</span>
+        </div>
+        <pre><span class="c-kw">package</span> <span class="c-fn">mymodule</span>
+
+<span class="c-kw">import</span> <span class="c-pkg">"github.com/GoHyperrr/mdk"</span>
+
+<span class="c-comment">// Register once in init()</span>
+<span class="c-kw">func</span> <span class="c-fn">init</span>() {
+  mdk.<span class="c-fn">Register</span>(<span class="c-kw">func</span>() mdk.<span class="c-type">Module</span> {
+    <span class="c-kw">return</span> &amp;<span class="c-type">Module</span>{}
+  })
+}
+
+<span class="c-kw">func</span> (m *<span class="c-type">Module</span>) <span class="c-fn">Init</span>(
+  ctx context.<span class="c-type">Context</span>,
+  rt  mdk.<span class="c-type">Runtime</span>,
+) <span class="c-kw">error</span> {
+  rt.<span class="c-fn">Workflows</span>().<span class="c-fn">Register</span>(mdk.<span class="c-type">Workflow</span>{
+    ID:         <span class="c-str">"mymodule.process.v1"</span>,
+    ExposeToAI: <span class="c-kw">true</span>,
+    Steps:      []mdk.<span class="c-type">Step</span>{...},
+  })
+  <span class="c-kw">return</span> <span class="c-kw">nil</span>
+}</pre>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- INFRA STACK -->
+<section id="infra">
+  <div class="inner">
+    <div class="section-eyebrow reveal">Infrastructure</div>
+    <div class="two-col" style="margin-top:0; align-items:start;">
+      <div>
+        <h2 class="section-title reveal">Zero dependencies<br/>to start. Scale when<br/>you need to.</h2>
+        <p class="section-sub reveal" style="margin-top:14px;">Every external dependency is a pluggable module. Develop locally on SQLite and in-memory. Ship to production on Postgres and NATS. Same code, swap config.</p>
+        <div class="stack-layers reveal">
+          <div class="stack-layer">
+            <div><div class="stack-layer-name">Database</div><div class="stack-layer-desc">SQLite (default) → PostgreSQL via GORM</div></div>
+            <span class="stack-badge badge-pluggable">Pluggable</span>
+          </div>
+          <div class="stack-layer">
+            <div><div class="stack-layer-name">Event Bus</div><div class="stack-layer-desc">In-memory (default) → NATS JetStream</div></div>
+            <span class="stack-badge badge-pluggable">Pluggable</span>
+          </div>
+          <div class="stack-layer">
+            <div><div class="stack-layer-name">Distributed Lock</div><div class="stack-layer-desc">In-memory (default) → NATS KV Bucket</div></div>
+            <span class="stack-badge badge-pluggable">Pluggable</span>
+          </div>
+          <div class="stack-layer">
+            <div><div class="stack-layer-name">File Storage</div><div class="stack-layer-desc">Local disk → S3 / GCS / Azure via gocloud</div></div>
+            <span class="stack-badge badge-pluggable">Pluggable</span>
+          </div>
+          <div class="stack-layer">
+            <div><div class="stack-layer-name">Workflow Engine</div><div class="stack-layer-desc">DAG execution, sagas, checkpointing</div></div>
+            <span class="stack-badge badge-core">Core</span>
+          </div>
+          <div class="stack-layer">
+            <div><div class="stack-layer-name">MCP / AI Gateway</div><div class="stack-layer-desc">Model Context Protocol over SSE</div></div>
+            <span class="stack-badge badge-ai">AI-Native</span>
+          </div>
+        </div>
+      </div>
+      <div class="stack-right reveal">
+        <div class="stack-fact">
+          <div class="stack-fact-num" style="color:var(--lime);">8</div>
+          <div class="stack-fact-label">Active commerce modules included — product, order, cart, customer, payments, taxonomy, and more.</div>
+        </div>
+        <div class="stack-fact">
+          <div class="stack-fact-num" style="color:var(--purple);">∞</div>
+          <div class="stack-fact-label">Workflows execute in parallel DAGs with automatic compensation on failure. No manual rollback code.</div>
+        </div>
+        <div class="stack-fact">
+          <div class="stack-fact-num" style="color:var(--blue);">1</div>
+          <div class="stack-fact-label">Binary controls the entire engine — build, serve, configure, diagnose. One CLI to rule them all.</div>
+        </div>
+        <div class="stack-fact" style="border-color:rgba(215,255,0,0.2);background:rgba(215,255,0,0.04);">
+          <div class="stack-fact-num" style="color:var(--lime);">0</div>
+          <div class="stack-fact-label">External dependencies required to run locally. SQLite + in-memory bus. Clone, build, run.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section class="cta-section">
+  <div class="cta-inner">
+    <div class="cta-label">Open source · MIT license</div>
+    <h2 class="cta-headline">Start building<br/>in minutes.</h2>
+    <div class="cta-actions">
+      <a href="https://github.com/GoHyperrr/hyperrr" target="_blank" class="btn-dark">View on GitHub →</a>
+      <a href="{{ '/docs/' | relative_url }}" class="btn-outline-dark">Read the docs</a>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <a href="#" class="footer-logo">hyperrr<span>.</span></a>
+  <ul class="footer-links">
+    <li><a href="{{ '/docs/' | relative_url }}">Docs</a></li>
+    <li><a href="{{ '/blog.html' | relative_url }}">Blog</a></li>
+    <li><a href="https://github.com/GoHyperrr/hyperrr" target="_blank">GitHub</a></li>
+    <li><a href="https://github.com/GoHyperrr/mdk" target="_blank">MDK</a></li>
+  </ul>
+  <div class="footer-copy">v0.1.0 — MIT License</div>
+</footer>
+
+<script>
+// ── MOBILE NAV ──
+const hamburger = document.getElementById('hamburger');
+const mobileNav = document.getElementById('nav-mobile');
+hamburger.addEventListener('click', () => {
+  mobileNav.classList.toggle('open');
+});
+function closeMobileNav() { mobileNav.classList.remove('open'); }
+
+// ── SCROLL REVEAL ──
+const revealObserver = new IntersectionObserver((entries) => {
+  entries.forEach(e => {
+    if (e.isIntersecting) {
+      e.target.classList.add('visible');
+      revealObserver.unobserve(e.target);
+    }
+  });
+}, { threshold: 0.08, rootMargin: '0px 0px -32px 0px' });
+document.querySelectorAll('.reveal').forEach((el, i) => {
+  el.style.transitionDelay = '0ms';
+  revealObserver.observe(el);
+});
+
+// Stagger arch cards
+document.querySelectorAll('.arch-card, .how-step').forEach((el, i) => {
+  el.style.transitionDelay = `${i * 70}ms`;
+});
+
+// ── BLOCK CANVAS ANIMATION ──
+(function() {
+  const canvas = document.getElementById('block-canvas');
+  const ctx = canvas.getContext('2d');
+
+  const LIME   = '#D7FF00';
+  const BLUE   = '#1550FF';
+  const PURPLE = '#B68DFF';
+  const WHITE  = '#F5F5F5';
+  const GRAY2  = '#1A1A1A';
+  const GRAY3  = '#2A2A2A';
+  const GRAY4  = '#555';
+  const GREEN  = '#28C840';
+
+  // Block definitions — each is a "module card" that will appear
+  const MODULE_SEQUENCE = [
+    { label: 'auth.emailpass',    color: PURPLE,  tag: 'AUTH',       icon: '🔒' },
+    { label: 'auth.apikey',       color: PURPLE,  tag: 'AUTH',       icon: '🔑' },
+    { label: 'commerce.product',  color: LIME,    tag: 'COMMERCE',   icon: '📦' },
+    { label: 'commerce.cart',     color: LIME,    tag: 'COMMERCE',   icon: '🛒' },
+    { label: 'commerce.order',    color: LIME,    tag: 'COMMERCE',   icon: '📋' },
+    { label: 'commerce.payments', color: '#7BA0FF', tag: 'COMMERCE', icon: '💳' },
+    { label: 'commerce.taxonomy', color: LIME,    tag: 'COMMERCE',   icon: '🏷️' },
+    { label: 'event-bus',         color: '#7BA0FF', tag: 'INFRA',    icon: '⚡' },
+    { label: 'workflow engine',   color: LIME,    tag: 'CORE',       icon: '🔄' },
+    { label: 'mcp.gateway',       color: PURPLE,  tag: 'AI',         icon: '🤖' },
+  ];
+
+  const CONNECTIONS = [
+    [0,2],[0,3],[1,2],[1,5],[2,4],[3,4],[4,5],[4,6],[2,7],[4,7],[7,8],[8,9],[5,9]
+  ];
+
+  let W, H, dpr;
+  let blocks = [];
+  let connections = [];
+  let particles = [];
+  let frame = 0;
+  let spawnIndex = 0;
+  let lastSpawn = -120;
+
+  function resize() {
+    dpr = window.devicePixelRatio || 1;
+    const rect = canvas.getBoundingClientRect();
+    W = rect.width;
+    H = rect.height;
+    canvas.width = W * dpr;
+    canvas.height = H * dpr;
+    ctx.scale(dpr, dpr);
+  }
+
+  // Layout grid positions for blocks — 3 cols
+  function getGridPos(index) {
+    const cols = 3;
+    const padX = 28, padY = 36;
+    const bw = (W - padX * 2) / cols;
+    const bh = 72;
+    const gap = 16;
+    const col = index % cols;
+    const row = Math.floor(index / cols);
+    return {
+      x: padX + col * bw + bw / 2,
+      y: padY + row * (bh + gap) + bh / 2,
+      w: bw - 16,
+      h: bh
+    };
+  }
+
+  function spawnBlock() {
+    if (spawnIndex >= MODULE_SEQUENCE.length) return;
+    const mod = MODULE_SEQUENCE[spawnIndex];
+    const pos = getGridPos(spawnIndex);
+    blocks.push({
+      id: spawnIndex,
+      ...mod,
+      ...pos,
+      alpha: 0,
+      scale: 0.7,
+      targetAlpha: 1,
+      targetScale: 1,
+      alive: true,
+      pulse: Math.random() * Math.PI * 2,
+    });
+    spawnIndex++;
+  }
+
+  // Data particle flowing along a connection
+  function spawnParticle() {
+    if (connections.length === 0) return;
+    const conn = connections[Math.floor(Math.random() * connections.length)];
+    const a = blocks[conn[0]];
+    const b = blocks[conn[1]];
+    if (!a || !b || a.alpha < 0.8 || b.alpha < 0.8) return;
+    particles.push({
+      ax: a.x, ay: a.y, bx: b.x, by: b.y,
+      t: 0, speed: 0.008 + Math.random() * 0.010,
+      color: [LIME, BLUE, PURPLE, GREEN][Math.floor(Math.random() * 4)],
+      size: 2.5 + Math.random() * 2,
+    });
+  }
+
+  function roundRect(ctx, x, y, w, h, r) {
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.lineTo(x + w - r, y);
+    ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+    ctx.lineTo(x + w, y + h - r);
+    ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+    ctx.lineTo(x + r, y + h);
+    ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+    ctx.lineTo(x, y + r);
+    ctx.quadraticCurveTo(x, y, x + r, y);
+    ctx.closePath();
+  }
+
+  function drawConnection(ax, ay, bx, by, alpha) {
+    ctx.save();
+    ctx.globalAlpha = alpha * 0.35;
+    ctx.strokeStyle = GRAY3;
+    ctx.lineWidth = 1;
+    ctx.setLineDash([4, 6]);
+    ctx.beginPath();
+    ctx.moveTo(ax, ay);
+    // Bezier curve
+    const mx = (ax + bx) / 2;
+    ctx.bezierCurveTo(mx, ay, mx, by, bx, by);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.restore();
+  }
+
+  function drawBlock(b) {
+    ctx.save();
+    ctx.globalAlpha = b.alpha;
+    ctx.translate(b.x, b.y);
+    ctx.scale(b.scale, b.scale);
+
+    const w = b.w, h = b.h;
+    const x = -w / 2, y = -h / 2;
+
+    // Subtle pulse glow
+    const pulse = (Math.sin(b.pulse + frame * 0.02) * 0.5 + 0.5) * 0.06 + 0.02;
+    const hexColor = b.color;
+    ctx.shadowColor = hexColor;
+    ctx.shadowBlur = 12 * pulse * 10;
+
+    // Card bg
+    roundRect(ctx, x, y, w, h, 6);
+    ctx.fillStyle = GRAY2;
+    ctx.fill();
+
+    // Border
+    roundRect(ctx, x, y, w, h, 6);
+    const borderAlpha = 0.25 + pulse * 2;
+    ctx.strokeStyle = hexColor;
+    ctx.globalAlpha = b.alpha * borderAlpha;
+    ctx.lineWidth = 1.2;
+    ctx.stroke();
+    ctx.globalAlpha = b.alpha;
+    ctx.shadowBlur = 0;
+
+    // Tag pill
+    const tagW = 52, tagH = 14;
+    const tagX = x + 10, tagY = y + 10;
+    ctx.fillStyle = hexColor + '18';
+    roundRect(ctx, tagX, tagY, tagW, tagH, 3);
+    ctx.fill();
+    ctx.fillStyle = hexColor;
+    ctx.font = `600 8px "Space Mono", monospace`;
+    ctx.letterSpacing = '0.08em';
+    ctx.fillText(b.tag, tagX + 5, tagY + 10);
+
+    // Icon
+    ctx.font = '16px sans-serif';
+    ctx.fillText(b.icon, x + 10, y + h - 14);
+
+    // Label
+    ctx.fillStyle = WHITE;
+    ctx.font = `600 11px "Space Grotesk", sans-serif`;
+    ctx.fillText(b.label, x + 32, y + h - 14);
+
+    // Status dot (green = active)
+    ctx.beginPath();
+    ctx.arc(w / 2 - 12, -h / 2 + 17, 3.5, 0, Math.PI * 2);
+    ctx.fillStyle = GREEN;
+    ctx.globalAlpha = b.alpha * (0.6 + pulse * 2);
+    ctx.fill();
+
+    ctx.restore();
+  }
+
+  function drawParticle(p) {
+    const t = p.t;
+    // Bezier position
+    const mx = (p.ax + p.bx) / 2;
+    const x = (1-t)*(1-t)*p.ax + 2*(1-t)*t*mx + t*t*p.bx;
+    // Control points match drawConnection
+    const y = (1-t)*(1-t)*p.ay + 2*(1-t)*t*((p.ay+p.by)/2) + t*t*p.by;
+
+    ctx.save();
+    ctx.globalAlpha = Math.sin(t * Math.PI) * 0.9;
+    ctx.fillStyle = p.color;
+    ctx.shadowColor = p.color;
+    ctx.shadowBlur = 8;
+    ctx.beginPath();
+    ctx.arc(x, y, p.size, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+  }
+
+  function draw() {
+    frame++;
+    ctx.clearRect(0, 0, W, H);
+
+    // 1. Spawn logic
+    if (frame - lastSpawn > 40 && spawnIndex < MODULE_SEQUENCE.length) {
+      spawnBlock();
+      lastSpawn = frame;
+    }
+
+    // 2. Establish connections as blocks are spawned
+    connections = [];
+    for (const [fromIdx, toIdx] of CONNECTIONS) {
+      if (fromIdx < spawnIndex && toIdx < spawnIndex) {
+        connections.push([fromIdx, toIdx]);
+      }
+    }
+
+    // 3. Draw connections
+    for (const conn of connections) {
+      const a = blocks[conn[0]];
+      const b = blocks[conn[1]];
+      if (a && b) {
+        const alpha = Math.min(a.alpha, b.alpha);
+        drawConnection(a.x, a.y, b.x, b.y, alpha);
+      }
+    }
+
+    // 4. Update and draw blocks
+    for (const b of blocks) {
+      b.alpha += (b.targetAlpha - b.alpha) * 0.1;
+      b.scale += (b.targetScale - b.scale) * 0.1;
+      drawBlock(b);
+    }
+
+    // 5. Spawn and update particles
+    if (Math.random() < 0.1 && spawnIndex > 1) {
+      spawnParticle();
+    }
+
+    for (let i = particles.length - 1; i >= 0; i--) {
+      const p = particles[i];
+      p.t += p.speed;
+      if (p.t >= 1) {
+        particles.splice(i, 1);
+      } else {
+        drawParticle(p);
+      }
+    }
+
+    requestAnimationFrame(draw);
+  }
+
+  window.addEventListener('resize', resize);
+  resize();
+  requestAnimationFrame(draw);
+})();
+</script>
+</body>
+</html>
