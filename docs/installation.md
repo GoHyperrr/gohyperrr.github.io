@@ -4,21 +4,68 @@ title: Installation & Quickstart
 permalink: /docs/installation.html
 ---
 
-This guide outlines the steps required to set up and run a GoHyperrr development cluster locally on your machine.
+This guide outlines the steps required to get started with Hyperrr. 
+
+For application developers, starting a new project takes just a single command. For contributors to the core Hyperrr framework modules, see the [Core Workspace Setup](#-core-developer-workspace-setup) section below.
 
 ---
 
 ## Prerequisites
 
 Before setting up GoHyperrr, ensure you have the following installed:
-- **Go** (version 1.26 or higher recommended)
+- **Go** (version 1.26 or higher)
 - **Git**
 
 ---
 
-## 🛠️ Workspace Setup
+## ⚡ Quickstart: Create a New Project
 
-GoHyperrr utilizes a multi-module workspace structure via `go.work`.
+The unified `hyperrr` CLI scaffolds a complete, production-ready commerce engine in seconds.
+
+### 1. Install the CLI Tool
+Download and install the `hyperrr` binary globally on your path:
+
+```bash
+go install github.com/GoHyperrr/hyperrr/cmd/hyperrr@latest
+```
+
+### 2. Scaffold a New Project
+Run the `new` command, which kicks off an interactive configuration wizard:
+
+```bash
+hyperrr new my-store
+```
+
+The interactive prompt will configure your Go module path, module preset (e.g. `commerce-full` or `commerce-minimal`), default database driver, and git settings. You can skip the interactive prompt and use standard defaults with the `-y` flag:
+
+```bash
+hyperrr new my-store -y
+```
+
+### 3. Generate Resolvers & Compile
+Move into your new project directory and build the schema registry and local server:
+
+```bash
+cd my-store
+hyperrr build
+```
+
+This aggregates all active module GraphQL schemas, runs the code generator, and compiles a project-local binary at `bin/hyperrr`.
+
+### 4. Run the Server
+Boot up the GraphQL API and MCP gateways:
+
+```bash
+hyperrr start
+```
+
+By default, the server runs at `http://localhost:8080`, exposing the interactive GraphQL playground and SSE endpoints for AI agents.
+
+---
+
+## 🛠️ Core Developer Workspace Setup
+
+If you are developing the core Hyperrr SDK packages, use the `go.work` multi-module layout.
 
 ### 1. Clone the Repositories
 Create a parent directory and clone the core repositories into it:
@@ -54,38 +101,13 @@ use (
 
 ---
 
-## 🚀 Building & Running the Gateway
+## 🚀 Adding Custom Modules
 
-The Hyperrr repository includes an automated build manager that handles GraphQL schema collection, code generation, custom resolver stitching, and final compilation.
-
-### 1. Configure Modules
-Update [hyperrr.yml](file:///D:/hyperrr-commerce-ai/hyperrr/hyperrr.yml) inside the `hyperrr/` directory to enable or disable active plugins:
-
-```yaml
-modules:
-  - resolve: "github.com/GoHyperrr/commerce/product"
-    id: "commerce.product"
-  - resolve: "github.com/GoHyperrr/commerce/cart"
-    id: "commerce.cart"
-  - resolve: "github.com/GoHyperrr/commerce/order"
-    id: "commerce.order"
-```
-
-### 2. Run the Builder
-Execute the builder tool from the `hyperrr` directory:
+To add a new custom module inside your project workspace:
 
 ```bash
-cd hyperrr
-go run cmd/builder/main.go
+hyperrr module create my-custom-module
 ```
 
-The builder will clean the cache, scan files for GraphQL schemas, generate bindings, compile the resolvers, and build the final executable in `bin/hyperrr` (or `bin/hyperrr.exe` on Windows).
+This scaffolds a new module under `modules/my-custom-module` containing standard GORM models, resolver implementations, and GraphQL schemas automatically bound to your project.
 
-### 3. Start the Server
-Launch the compiled binary:
-
-```bash
-./bin/hyperrr --server
-```
-
-By default, the server boots on port `8080`, exposing the GraphQL playground, SSE Model Context Protocol (MCP) server, and the real-time event runtime.
