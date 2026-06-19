@@ -1,0 +1,240 @@
+# Hyperrr — AI-Native Commerce Engine SDK (LLM Context & System Prompt)
+
+Hyperrr is a Go-based, AI-native commerce SDK. It provides modular building blocks (Auth, Products, Cart, Order, Payments) bound together by an event bus, structured logging, a GORM database connection, and a workflow engine, exposed via a unified GraphQL API and Model Context Protocol (MCP) server for AI agents.
+
+---
+
+## 1. Developer CLI Quickstart
+
+Install the global CLI:
+```bash
+go install github.com/GoHyperrr/hyperrr/cmd/hyperrr@latest
+```
+
+Core commands inside project root:
+- `hyperrr new <project-name>`: Scaffolds a new project with preset modules, configs, and environments.
+- `hyperrr build`: Aggregates schemas, runs gqlgen, stitches custom resolvers, and compiles a project-local binary at `bin/hyperrr`.
+- `hyperrr start` (alias: `server`): Boots the server locally at `http://localhost:8080`.
+- `hyperrr module create <name>`: Scaffolds a new custom module folder at `modules/<name>`.
+- `hyperrr module add <package>`: Fetches third-party module via `go get`, registers it in `hyperrr.yml`, and updates generated imports.
+
+---
+
+## 2. Core Abstractions & Module Interface
+
+Every Hyperrr module must implement the `mdk.Module` interface:
+
+```go
+package mdk
+
+import (
+	"context"
+	"net/http"
+)
+
+type Module interface {
+	ID() string                         // Stable, unique module ID (e.g. "plugin.inventory")
+	Models() []any                      // GORM model structs for automigration
+	Routes() []Route                    // Custom HTTP endpoints
+	Init(ctx context.Context, rt Runtime) error // Called at startup with shared infrastructure
+	Shutdown(ctx context.Context) error // Called on graceful exit
+}
+
+type Route struct {
+	Method  string       // "GET", "POST", etc. Empty means all methods
+	Pattern string       // Pattern e.g. "/inventory/{id}"
+	Handler http.Handler
+}
+```
+
+### Module Registration
+Modules register themselves inside an `init()` block:
+```go
+import "github.com/GoHyperrr/mdk"
+
+func init() {
+	mdk.Register(func() mdk.Module { return &MyModule{} })
+}
+```
+
+---
+
+## 3. Shared Infrastructure via `mdk.Runtime`
+
+In the `Init(ctx, rt)` phase, modules access shared infrastructure using the `mdk.Runtime` wrapper:
+
+```go
+type Runtime interface {
+	DB() *gorm.DB                 // Shared GORM DB pool (sqlite, postgres, etc.)
+	Bus() EventBus                 // Context-tied event bus for pub/sub
+	Workflows() WorkflowEngine    // Durable workflow execution runner
+	Config(key string) any         // Key-value configuration retrieval
+	Logger() *slog.Logger          // Structured logger
+	Module(id string) (Module, bool) // Access sibling active modules
+}
+```
+
+---
+
+## 4. Database Models & Migration
+Define standard GORM structs and return pointers to empty instances in `Models()`:
+
+```go
+type InventoryItem struct {
+	SKU      string `gorm:"primaryKey"`
+	Quantity int    `gorm:"default:0"`
+}
+
+func (m *Module) Models() []any {
+	return []any{&InventoryItem{}}
+}
+```
+
+---
+
+## 5. Event Bus Pub/Sub
+Publish and subscribe to events across modules using `rt.Bus()`:
+
+```go
+// Event Definition
+type Event struct {
+	Source    string          // Source module ID
+	Type      string          // Event topic/type
+	Payload   []byte          // JSON payload
+	Timestamp time.Time
+}
+
+// Publish Event
+payload, _ := json.Marshal(map[string]any{"sku": "coffee-sidama", "quantity": 10})
+rt.Bus().Publish(ctx, "inventory", "stock.updated", payload)
+
+// Subscribe Event (typically inside Init)
+rt.Bus().Subscribe("inventory", "stock.updated", func(ctx context.Context, e mdk.Event) error {
+	// Handle event logic
+	return nil
+})
+```
+
+---
+
+## 6. GraphQL Schema & Custom Resolvers
+
+Modules define their GraphQL schema in `*.graphqls` files inside their directory.
+The custom resolvers are bound in `graphql.go` mapping maps of Query, Mutation, and FieldResolvers:
+
+```go
+package inventory
+
+func (m *Module) Queries() map[string]any {
+	return map[string]any{
+		"getInventory": m.GetInventoryResolver,
+	}
+}
+
+func (m *Module) Mutations() map[string]any {
+	return map[string]any{
+		"updateInventory": m.UpdateInventoryResolver,
+	}
+}
+
+func (m *Module) FieldResolvers() map[string]any {
+	return nil
+}
+```
+
+*Note: Resolvers must match the gqlgen method signatures generated during `hyperrr build` in `api/graph/schema_gen`.*
+
+---
+
+## 7. Model Context Protocol (MCP) & Workflows
+
+Workflows are multi-step state machines registered to the runner that can optionally be exposed directly to LLMs as tools:
+
+```go
+import "github.com/GoHyperrr/hyperrr/pkg/workflow"
+
+// Exposing a workflow as an AI tool
+wf := &workflow.Workflow{
+	Name:        "inventory.allocate_stock",
+	Description: "Reserves stock items for a pending checkout order.",
+	ExposeToAI:  true, // Tells the MCP server to expose this workflow as a tool
+	InputSchema: map[string]any{
+		"type": "object",
+		"properties": map[string]any{
+			"sku":      map[string]any{"type": "string"},
+			"quantity": map[string]any{"type": "integer"},
+		},
+		"required": []string{"sku", "quantity"},
+	},
+	Steps: []workflow.Step{
+		{
+			ID:   "reserve",
+			Name: "Reserve Items",
+			Uses: "inventory.reserve_handler",
+		},
+	},
+}
+```
+Register the workflow handler inside the engine runner:
+```go
+rt.Workflows().RegisterHandler("inventory.reserve_handler", func(sCtx mdk.StepContext) mdk.StepResult {
+	// Business logic
+	return mdk.StepResult{Output: map[string]any{"status": "allocated"}}
+})
+```
+
+---
+
+## 8. Boilerplate Custom Module Example
+
+A minimal scaffold for a loyalty custom module:
+
+### File: `modules/loyalty/module.go`
+```go
+package loyalty
+
+import (
+	"context"
+	"encoding/json"
+	"github.com/GoHyperrr/mdk"
+)
+
+type LoyaltyAccount struct {
+	CustomerID string `gorm:"primaryKey"`
+	Points     int    `gorm:"default:0"`
+}
+
+type Module struct {
+	rt mdk.Runtime
+}
+
+func NewModule() *Module { return &Module{} }
+
+func init() {
+	mdk.Register(func() mdk.Module { return NewModule() })
+}
+
+func (m *Module) ID() string      { return "plugin.loyalty" }
+func (m *Module) Models() []any   { return []any{&LoyaltyAccount{}} }
+func (m *Module) Routes() []mdk.Route { return nil }
+
+func (m *Module) Init(ctx context.Context, rt mdk.Runtime) error {
+	m.rt = rt
+	return rt.Bus().Subscribe("commerce", "order.completed", func(ctx context.Context, e mdk.Event) error {
+		var payload struct {
+			CustomerID string  `json:"customer_id"`
+			Amount     float64 `json:"amount"`
+		}
+		if err := json.Unmarshal(e.Payload, &payload); err != nil {
+			return err
+		}
+		points := int(payload.Amount * 10)
+		var acc LoyaltyAccount
+		rt.DB().FirstOrCreate(&acc, LoyaltyAccount{CustomerID: payload.CustomerID})
+		acc.Points += points
+		return rt.DB().Save(&acc).Error
+	})
+}
+
+func (m *Module) Shutdown(ctx context.Context) error { return nil }
+```
