@@ -1,29 +1,39 @@
-# Hyperrr — AI-Native Commerce Engine SDK (LLM Context & System Prompt)
+# Hyperrr — AI-Native Commerce Engine SDK (Full Context, Specifications & Guidelines)
 
-Hyperrr is a Go-based, AI-native commerce SDK. It provides modular building blocks (Auth, Products, Cart, Order, Payments) bound together by an event bus, structured logging, a GORM database connection, and a workflow engine, exposed via a unified GraphQL API and Model Context Protocol (MCP) server for AI agents.
-
----
-
-## 1. Developer CLI Quickstart
-
-Install the global CLI:
-```bash
-go install github.com/GoHyperrr/hyperrr/cmd/hyperrr@latest
-```
-
-Core commands inside project root:
-- `hyperrr new <project-name>`: Scaffolds a new project with preset modules, configs, and environments.
-- `hyperrr build`: Aggregates schemas, runs gqlgen, stitches custom resolvers, and compiles a project-local binary at `bin/hyperrr`.
-- `hyperrr start` (alias: `server`): Boots the server locally at `http://localhost:8080`.
-- `hyperrr module create <name>`: Scaffolds a new custom module folder at `modules/<name>`.
-- `hyperrr module add <package>`: Fetches third-party module via `go get`, registers it in `hyperrr.yml`, and updates generated imports.
+Hyperrr is a highly modular, Go-based commerce engine SDK optimized for agentic workflows. It aggregates commerce sub-domains (Catalog, Carts, Orders, Payments, Customers, Taxonomy, SEO) into a unified runtime orchestrated by a core gateway. The gateway exposes this functionality via a stitched GraphQL API and a Model Context Protocol (MCP) server for direct integration with AI coding assistants and agents.
 
 ---
 
-## 2. Core Abstractions & Module Interface
+## 1. System Configuration & Architecture
 
-Every Hyperrr module must implement the `mdk.Module` interface:
+The application configuration is parsed via `viper` from `hyperrr.yml`, `configs/hyperrr.yml`, or environment variables.
 
+### 1.1 Core Configuration Parameters
+- **`APP_NAME`**: Name of the application (default: `hyperrr`).
+- **`APP_ENV`**: Application runtime environment (`local`, `development`, `staging`, `production`, `test`).
+- **`LOG_LEVEL`**: Logging severity (`debug`, `info`, `warn`, `error`).
+- **`LOG_FORMAT`**: Console logging format (`text` or `json`).
+- **`SERVER_PORT`**: Port number for GraphQL playground, SSE MCP, and query endpoints (default: `8080`).
+- **`DB_DRIVER`**: Database driver to connect (`sqlite` or `postgres`).
+- **`DB_DSN`**: Database connection string (e.g. `hyperrr.db` or PostgreSQL link).
+- **`EVENT_BUS_PROVIDER`**: Internal pub/sub implementation (`inmem` or `nats`).
+- **`WORKFLOW_STORE_TYPE`**: Workflow execution state storage (`mem`, `nats`, `redis`).
+- **`NATS_URL`**: NATS clustering URL (default: `nats://localhost:4222`).
+- **`NATS_STATE_BUCKET`**: NATS JetStream bucket name for workflow states (default: `hyperrr_state`).
+- **`NATSLocksBucket`**: NATS JetStream bucket name for distributed locking (default: `hyperrr_locks`).
+- **`STORAGE_PROVIDER`**: Active file storage engine (`local` or `cloud`).
+- **`STORAGE_BUCKET_URL`**: File storage target destination (`mem://`, `file://<path>`, or S3 bucket URL `s3://<bucket>`).
+- **`CURRENCY`**: Standard storefront transaction currency (default: `USD`).
+- **`AUTH_PROVIDERS`**: Active API security providers (`jwt`, `emailpass`, `apikey`, `none`).
+- **`MCP_AUTH_PROVIDERS`**: Core authentication providers for the MCP gateway (`apikey` or `jwt`).
+
+---
+
+## 2. Module System & The Module Contract
+
+Every feature block in Hyperrr is encapsulated as a module. Modules implement `mdk.Module` from the Module Development Kit (MDK) and are initialized by the runtime orchestrator.
+
+### 2.1 The `mdk.Module` Interface
 ```go
 package mdk
 
@@ -33,163 +43,306 @@ import (
 )
 
 type Module interface {
-	ID() string                         // Stable, unique module ID (e.g. "plugin.inventory")
-	Models() []any                      // GORM model structs for automigration
-	Routes() []Route                    // Custom HTTP endpoints
-	Init(ctx context.Context, rt Runtime) error // Called at startup with shared infrastructure
-	Shutdown(ctx context.Context) error // Called on graceful exit
+	ID() string                                 // Returns stable module ID (e.g. "commerce.product")
+	Models() []any                              // GORM entities to pass to automigrations pool
+	Routes() []Route                            // Custom HTTP endpoints to mount
+	Init(ctx context.Context, rt Runtime) error // Setup database tables, listeners, and handlers
+	Shutdown(ctx context.Context) error         // Resource cleanup hook
 }
 
 type Route struct {
-	Method  string       // "GET", "POST", etc. Empty means all methods
-	Pattern string       // Pattern e.g. "/inventory/{id}"
+	Method  string
+	Pattern string
 	Handler http.Handler
 }
 ```
 
-### Module Registration
-Modules register themselves inside an `init()` block:
-```go
-import "github.com/GoHyperrr/mdk"
+### 2.2 Optional Interface Extensions
+- **`DependentModule`**: Expresses explicit boot ordering.
+  ```go
+  type DependentModule interface {
+      Module
+      Dependencies() []string // Returns list of module IDs that must initialize first
+  }
+  ```
+- **`MiddlewareProvider`**: Returns global HTTP middlewares to mount on the gateway.
+  ```go
+  type MiddlewareProvider interface {
+      Middlewares() []func(http.Handler) http.Handler
+  }
+  ```
+- **`HTMLUIProvider`**: Returns HTML dashboard screens to render in client interfaces.
+  ```go
+  type HTMLUIProvider interface {
+      RenderHTML(ctx context.Context) (title, html string, err error)
+  }
+  ```
 
+### 2.3 Module Registration Flow
+A module registers its constructor factory in the global MDK space inside `init()`:
+```go
 func init() {
 	mdk.Register(func() mdk.Module { return &MyModule{} })
 }
 ```
+*Registration happens during application compile time. The gateway builder dynamically scans configs/hyperrr.yml, generates blank imports in `cmd/server/imports_generated.go`, and calls registration hooks.*
 
 ---
 
-## 3. Shared Infrastructure via `mdk.Runtime`
+## 3. Core Framework Subsystems
 
-In the `Init(ctx, rt)` phase, modules access shared infrastructure using the `mdk.Runtime` wrapper:
+Modules interact with shared resources using the `mdk.Runtime` interface supplied during `Init(...)`:
 
 ```go
 type Runtime interface {
-	DB() *gorm.DB                 // Shared GORM DB pool (sqlite, postgres, etc.)
-	Bus() EventBus                 // Context-tied event bus for pub/sub
-	Workflows() WorkflowEngine    // Durable workflow execution runner
-	Config(key string) any         // Key-value configuration retrieval
-	Logger() *slog.Logger          // Structured logger
-	Module(id string) (Module, bool) // Access sibling active modules
+	DB() *gorm.DB                     // Shared GORM DB connection
+	Bus() EventBus                     // Real-time Event Pub/Sub
+	Workflows() WorkflowEngine        // Resumable state-machine orchestrator
+	Config(key string) any             // Key-value configuration retrieval
+	Logger() *slog.Logger              // Logger instance
+	Module(id string) (Module, bool)     // Hook to fetch sibling modules
 }
 ```
 
----
+### 3.1 GORM Database Pool (`DB()`)
+All modules share a single GORM connection pool. Automigrations are ran sequentially for all returned module `Models()` upon startup before `Init()` triggers.
 
-## 4. Database Models & Migration
-Define standard GORM structs and return pointers to empty instances in `Models()`:
-
+### 3.2 Event Bus Subsystem (`Bus()`)
+Event communication uses `mdk.Event` structures:
 ```go
-type InventoryItem struct {
-	SKU      string `gorm:"primaryKey"`
-	Quantity int    `gorm:"default:0"`
-}
-
-func (m *Module) Models() []any {
-	return []any{&InventoryItem{}}
-}
-```
-
----
-
-## 5. Event Bus Pub/Sub
-Publish and subscribe to events across modules using `rt.Bus()`:
-
-```go
-// Event Definition
 type Event struct {
-	Source    string          // Source module ID
-	Type      string          // Event topic/type
-	Payload   []byte          // JSON payload
-	Timestamp time.Time
+	Source    string    `json:"source"`
+	Type      string    `json:"type"`
+	Payload   []byte    `json:"payload"`
+	Timestamp time.Time `json:"timestamp"`
+}
+```
+
+#### Event Subsystem Commands:
+- **`Publish(ctx, source, topic, payload)`**: Broadcasts a JSON serialized payload.
+- **`Subscribe(source, topic, handler)`**: Registers an event receiver. Handlers use the signature:
+  ```go
+  func(ctx context.Context, e mdk.Event) error
+  ```
+
+### 3.3 File Storage Subsystem (`file-storage`)
+Exposes unified read/write endpoints to storage pools regardless of backend providers:
+- `mem://`: Virtual in-memory bucket (great for tests).
+- `file:///path/to/dir`: Local disk mounting.
+- `s3://bucket-name?region=us-east-1`: S3-compatible cloud storage.
+
+### 3.4 Distributed Locking Subsystem (`locking`)
+Enables transactional protection across clustered instances using a `Locker` instance:
+```go
+type Locker interface {
+	Lock(ctx context.Context, key string, ttl time.Duration) (LockToken, error)
+	Unlock(ctx context.Context, key string, token LockToken) error
+}
+```
+
+### 3.5 Durable Workflow Engine (`workflow`)
+Allows constructing complex business processes that survive server crashes, using a step execution architecture:
+
+```go
+type StepResult struct {
+	Output any
+	Error  error
 }
 
-// Publish Event
-payload, _ := json.Marshal(map[string]any{"sku": "coffee-sidama", "quantity": 10})
-rt.Bus().Publish(ctx, "inventory", "stock.updated", payload)
+type StepContext interface {
+	Input() map[string]any
+	State() map[string]any
+	DB() *gorm.DB
+	Bus() EventBus
+	StepID() string
+}
 
-// Subscribe Event (typically inside Init)
-rt.Bus().Subscribe("inventory", "stock.updated", func(ctx context.Context, e mdk.Event) error {
-	// Handle event logic
+type StepFunc func(sCtx StepContext) StepResult
+```
+
+Workflows are declared via DSL structs:
+```go
+type Step struct {
+	ID   string
+	Name string
+	Uses string // The name of a registered StepFunc
+}
+
+type Workflow struct {
+	Name        string
+	Description string
+	ExposeToAI  bool
+	InputSchema map[string]any
+	Steps       []Step
+}
+```
+
+---
+
+## 4. Module & Database Specifications
+
+### 4.1 Authentication Modules (`auth.*`)
+- **`auth.apikey`**:
+  - Key Entity Model:
+    ```go
+    type APIKey struct {
+        KeyID       string    `gorm:"primaryKey;size:32"`
+        HashedKey   string    `gorm:"index;size:64;not null"`
+        CustomerID  string    `gorm:"index;size:64"`
+        Name        string    `gorm:"size:100"`
+        Scopes      string    `gorm:"type:text"` // Comma-separated permissions list
+        IsActive    bool      `gorm:"default:true"`
+        CreatedAt   time.Time
+        ExpiresAt   *time.Time
+    }
+    ```
+  - API key verification middleware checks HTTP header keys: `Authorization: Bearer <key>` or `X-API-Key: <key>`.
+- **`auth.emailpass`**:
+  - User Entity Model:
+    ```go
+    type User struct {
+        ID           string `gorm:"primaryKey"`
+        Email        string `gorm:"uniqueIndex;not null"`
+        PasswordHash string `gorm:"not null"`
+        Name         string
+        Role         string `gorm:"default:customer"`
+        CreatedAt    time.Time
+    }
+    ```
+  - Validates login credentials and returns JWT bearer tokens.
+
+### 4.2 Commerce Functional Modules (`commerce.*`)
+- **`commerce.product`**:
+  - Manages items, prices, SKUs.
+  - Models:
+    ```go
+    type Product struct {
+        ID          string  `gorm:"primaryKey"`
+        SKU         string  `gorm:"uniqueIndex;not null"`
+        Name        string  `gorm:"not null"`
+        Description string
+        Price       float64 `gorm:"not null"`
+        Inventory   int     `gorm:"default:0"`
+    }
+    ```
+- **`commerce.cart`**:
+  - Tracks user checkout configurations.
+  - Models:
+    ```go
+    type Cart struct {
+        ID         string     `gorm:"primaryKey"`
+        CustomerID string     `gorm:"index"`
+        Items      []CartItem `gorm:"foreignKey:CartID;constraint:OnDelete:CASCADE"`
+        CreatedAt  time.Time
+        UpdatedAt  time.Time
+    }
+    type CartItem struct {
+        ID        string `gorm:"primaryKey"`
+        CartID    string `gorm:"index"`
+        ProductSKU string `gorm:"size:100;not null"`
+        Quantity  int    `gorm:"default:1"`
+    }
+    ```
+- **`commerce.order`**:
+  - Handles customer sales records.
+  - Models:
+    ```go
+    type Order struct {
+        ID         string      `gorm:"primaryKey"`
+        CustomerID string      `gorm:"index;not null"`
+        Status     string      `gorm:"size:20;default:'pending'"` // pending, paid, completed, cancelled
+        Total      float64     `gorm:"not null"`
+        Items      []OrderItem `gorm:"foreignKey:OrderID;constraint:OnDelete:CASCADE"`
+        CreatedAt  time.Time
+        UpdatedAt  time.Time
+    }
+    type OrderItem struct {
+        ID        string  `gorm:"primaryKey"`
+        OrderID   string  `gorm:"index"`
+        ProductSKU string  `gorm:"not null"`
+        Quantity  int     `gorm:"default:1"`
+        Price     float64 `gorm:"not null"`
+    }
+    ```
+- **`commerce.payments`**: Registers custom mock or Stripe payment adapters.
+- **`commerce.taxonomy`**: Handles catalog categorization (Categories, Taxons, tags).
+- **`commerce.seo`**: Handles product metadata optimization and static indexing tags.
+- **`commerce.customer`**: Tracks addresses, profiles, and billing histories.
+- **`commerce.store`**: Configures multi-tenant parameters, domain mappings, and settings.
+- **`commerce.notification`**: Sends emails, webhook notifications, or SMS on event triggers.
+
+---
+
+## 5. Stitched API & Resolver Protocols
+
+GraphQL APIs are dynamically compiled. Each module exposes its bindings in `graphql.go` mapping to custom query structures.
+
+### 5.1 Resolver Mappings Hook
+Any module implementing GraphQL resolvers registers Queries, Mutations, and FieldResolvers maps:
+```go
+type GraphQLProvider interface {
+	Queries() map[string]any
+	Mutations() map[string]any
+	FieldResolvers() map[string]any
+}
+```
+
+### 5.2 Model Context Protocol (MCP) Server
+Allows external AI agents to access Hyperrr commands over SSE.
+- **SSE Transport Endpoint**: `http://localhost:8080/mcp/sse`
+- **Messages Endpoint**: `http://localhost:8080/mcp/messages`
+- All workflows registered with `ExposeToAI: true` are exposed as tools.
+- All database model structures registered in `Models()` can be mapped as MCP Resources.
+
+---
+
+## 6. Implementation Code Guidelines (AI Templates)
+
+Here are the complete Go code implementations for common patterns.
+
+### 6.1 Creating a Custom Module (With Models & Lifecycle)
+```go
+package custom
+
+import (
+	"context"
+	"github.com/GoHyperrr/mdk"
+)
+
+type CustomSettings struct {
+	ID    string `gorm:"primaryKey"`
+	Key   string `gorm:"uniqueIndex"`
+	Value string
+}
+
+type Module struct {
+	rt mdk.Runtime
+}
+
+func NewModule() *Module {
+	return &Module{}
+}
+
+func init() {
+	mdk.Register(func() mdk.Module { return NewModule() })
+}
+
+func (m *Module) ID() string      { return "plugin.custom" }
+func (m *Module) Models() []any   { return []any{&CustomSettings{}} }
+func (m *Module) Routes() []mdk.Route { return nil }
+
+func (m *Module) Init(ctx context.Context, rt mdk.Runtime) error {
+	m.rt = rt
+	rt.Logger().Info("Initializing custom module...")
 	return nil
-})
-```
-
----
-
-## 6. GraphQL Schema & Custom Resolvers
-
-Modules define their GraphQL schema in `*.graphqls` files inside their directory.
-The custom resolvers are bound in `graphql.go` mapping maps of Query, Mutation, and FieldResolvers:
-
-```go
-package inventory
-
-func (m *Module) Queries() map[string]any {
-	return map[string]any{
-		"getInventory": m.GetInventoryResolver,
-	}
 }
 
-func (m *Module) Mutations() map[string]any {
-	return map[string]any{
-		"updateInventory": m.UpdateInventoryResolver,
-	}
-}
-
-func (m *Module) FieldResolvers() map[string]any {
+func (m *Module) Shutdown(ctx context.Context) error {
 	return nil
 }
 ```
 
-*Note: Resolvers must match the gqlgen method signatures generated during `hyperrr build` in `api/graph/schema_gen`.*
-
----
-
-## 7. Model Context Protocol (MCP) & Workflows
-
-Workflows are multi-step state machines registered to the runner that can optionally be exposed directly to LLMs as tools:
-
-```go
-import "github.com/GoHyperrr/hyperrr/pkg/workflow"
-
-// Exposing a workflow as an AI tool
-wf := &workflow.Workflow{
-	Name:        "inventory.allocate_stock",
-	Description: "Reserves stock items for a pending checkout order.",
-	ExposeToAI:  true, // Tells the MCP server to expose this workflow as a tool
-	InputSchema: map[string]any{
-		"type": "object",
-		"properties": map[string]any{
-			"sku":      map[string]any{"type": "string"},
-			"quantity": map[string]any{"type": "integer"},
-		},
-		"required": []string{"sku", "quantity"},
-	},
-	Steps: []workflow.Step{
-		{
-			ID:   "reserve",
-			Name: "Reserve Items",
-			Uses: "inventory.reserve_handler",
-		},
-	},
-}
-```
-Register the workflow handler inside the engine runner:
-```go
-rt.Workflows().RegisterHandler("inventory.reserve_handler", func(sCtx mdk.StepContext) mdk.StepResult {
-	// Business logic
-	return mdk.StepResult{Output: map[string]any{"status": "allocated"}}
-})
-```
-
----
-
-## 8. Boilerplate Custom Module Example
-
-A minimal scaffold for a loyalty custom module:
-
-### File: `modules/loyalty/module.go`
+### 6.2 Listening and Publishing Events (Checkout Rewards Adapter)
 ```go
 package loyalty
 
@@ -199,7 +352,7 @@ import (
 	"github.com/GoHyperrr/mdk"
 )
 
-type LoyaltyAccount struct {
+type CustomerReward struct {
 	CustomerID string `gorm:"primaryKey"`
 	Points     int    `gorm:"default:0"`
 }
@@ -210,16 +363,16 @@ type Module struct {
 
 func NewModule() *Module { return &Module{} }
 
-func init() {
-	mdk.Register(func() mdk.Module { return NewModule() })
-}
+func init() { mdk.Register(func() mdk.Module { return NewModule() }) }
 
 func (m *Module) ID() string      { return "plugin.loyalty" }
-func (m *Module) Models() []any   { return []any{&LoyaltyAccount{}} }
+func (m *Module) Models() []any   { return []any{&CustomerReward{}} }
 func (m *Module) Routes() []mdk.Route { return nil }
 
 func (m *Module) Init(ctx context.Context, rt mdk.Runtime) error {
 	m.rt = rt
+	
+	// Listen for completing order completion events
 	return rt.Bus().Subscribe("commerce", "order.completed", func(ctx context.Context, e mdk.Event) error {
 		var payload struct {
 			CustomerID string  `json:"customer_id"`
@@ -228,13 +381,117 @@ func (m *Module) Init(ctx context.Context, rt mdk.Runtime) error {
 		if err := json.Unmarshal(e.Payload, &payload); err != nil {
 			return err
 		}
-		points := int(payload.Amount * 10)
-		var acc LoyaltyAccount
-		rt.DB().FirstOrCreate(&acc, LoyaltyAccount{CustomerID: payload.CustomerID})
-		acc.Points += points
-		return rt.DB().Save(&acc).Error
+
+		points := int(payload.Amount * 10) // 10 points per dollar
+		
+		// Update DB
+		var rw CustomerReward
+		m.rt.DB().FirstOrCreate(&rw, CustomerReward{CustomerID: payload.CustomerID})
+		rw.Points += points
+		if err := m.rt.DB().Save(&rw).Error; err != nil {
+			return err
+		}
+		
+		// Publish custom notifications trigger
+		notifyMsg, _ := json.Marshal(map[string]any{"customer_id": payload.CustomerID, "points_earned": points})
+		m.rt.Bus().Publish(ctx, "loyalty", "points.credited", notifyMsg)
+		
+		m.rt.Logger().Info("Credited points balance", "customer", payload.CustomerID, "points", points)
+		return nil
 	})
 }
 
 func (m *Module) Shutdown(ctx context.Context) error { return nil }
+```
+
+### 6.3 Registering a Resumable State Workflow
+```go
+package shipping
+
+import (
+	"context"
+	"github.com/GoHyperrr/mdk"
+	"github.com/GoHyperrr/hyperrr/pkg/workflow"
+)
+
+type Module struct {
+	rt mdk.Runtime
+}
+
+func NewModule() *Module { return &Module{} }
+
+func init() { mdk.Register(func() mdk.Module { return NewModule() }) }
+
+func (m *Module) ID() string      { return "plugin.shipping" }
+func (m *Module) Models() []any   { return nil }
+func (m *Module) Routes() []mdk.Route { return nil }
+
+func (m *Module) Init(ctx context.Context, rt mdk.Runtime) error {
+	m.rt = rt
+
+	// 1. Register step handler
+	err := rt.Workflows().RegisterHandler("shipping.create_label", func(sCtx mdk.StepContext) mdk.StepResult {
+		input := sCtx.Input()
+		address := input["address"].(string)
+		
+		// Business logic
+		sCtx.DB().Exec("SELECT 1") // Can use shared DB connection inside steps
+		
+		return mdk.StepResult{Output: map[string]any{
+			"tracking_number": "TRK-" + address + "-9928",
+		}}
+	})
+	if err != nil {
+		return err
+	}
+
+	// 2. Register workflow configuration
+	wf := &workflow.Workflow{
+		Name:        "shipping.dispatch",
+		Description: "Dispatches packages to target addresses",
+		ExposeToAI:  true,
+		InputSchema: map[string]any{
+			"type": "object",
+			"properties": map[string]any{
+				"address": map[string]any{"type": "string"},
+			},
+			"required": []string{"address"},
+		},
+		Steps: []workflow.Step{
+			{
+				ID:   "label",
+				Name: "Generate Label",
+				Uses: "shipping.create_label",
+			},
+		},
+	}
+	
+	// Add workflow config to registry
+	return rt.Workflows().(*workflow.Runner).GetRuntime().Workflows().(*workflow.Runner).GetRuntime().Workflows().RegisterWorkflow(wf)
+}
+
+func (m *Module) Shutdown(ctx context.Context) error { return nil }
+```
+
+### 6.4 Distributed Lock Guard Pattern
+```go
+func (m *Module) ProcessSecureTransaction(ctx context.Context, customerID string) error {
+	lockManager, ok := m.rt.Workflows().(*workflow.Runner).GetRuntime().Workflows().(*workflow.Runner).GetLocker().(locking.Locker)
+	if !ok {
+		return fmt.Errorf("lock provider not configured")
+	}
+
+	lockKey := fmt.Sprintf("lock:transaction:%s", customerID)
+	token, err := lockManager.Lock(ctx, lockKey, 10*time.Second)
+	if err != nil {
+		return fmt.Errorf("could not acquire lock (concurrency conflict): %w", err)
+	}
+	defer lockManager.Unlock(context.Background(), lockKey, token) // Ensure releasing even if code panics
+
+	// Perform database operations inside locked protection
+	return m.rt.DB().Transaction(func(tx *gorm.DB) error {
+		// Secure critical transactions
+		return nil
+	})
+}
 ```
