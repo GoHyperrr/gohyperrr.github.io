@@ -37,7 +37,7 @@ modules:
 
 ---
 
-## 2. Compilation Builder (`cmd/builder`)
+## 2. Compilation Builder (`hyperrr build`)
 
 Hyperrr utilizes a custom static code-generation tool to wire modules on compile-time. The builder handles three main phases:
 
@@ -49,8 +49,7 @@ Hyperrr utilizes a custom static code-generation tool to wire modules on compile
 To rebuild after adding new modules or modifying GraphQL schemas:
 
 ```bash
-cd hyperrr
-go run cmd/builder/main.go
+hyperrr build
 ```
 
 The compiled binary will be written to `bin/hyperrr` (or `bin/hyperrr.exe` on Windows).
@@ -72,14 +71,15 @@ For example, when the BrewStore loyalty points workflow is exposed:
 Database structures registered by modules can be declared as **MCP Resources**. This allows AI agents to inspect entity schemas (like reading active shopping cart statuses or products catalogs) without writing manual API queries.
 
 ### Run with SSE Transport
-Start the server and expose the MCP endpoint at `/api/mcp/sse`:
+Start the server and expose the MCP endpoints:
 
 ```bash
-./bin/hyperrr --server
+hyperrr start
 ```
 
 AI clients connect by specifying the SSE endpoint URL:
-`http://localhost:8080/api/mcp/sse`
+`http://localhost:8080/mcp/sse`
+
 
 ---
 
