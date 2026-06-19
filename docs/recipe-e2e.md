@@ -8,52 +8,41 @@ This recipe provides a step-by-step guide to developing an end-to-end ecommerce 
 
 ---
 
-## 🛠️ Step 1: Set Up the Workspace
+## 🛠️ Step 1: Create the Project
 
-Create a parent workspace folder and clone the core frameworks.
+Instead of cloning multiple core repositories and manually configuration, we can use the unified `hyperrr` CLI to boot a fresh workspace.
 
-### 1. Structure the Folders
+### 1. Install the CLI
+Download and install the `hyperrr` binary globally:
+
 ```bash
-mkdir brewstore-backend && cd brewstore-backend
-git clone https://github.com/GoHyperrr/mdk.git
-git clone https://github.com/GoHyperrr/hyperrr.git
-git clone https://github.com/GoHyperrr/commerce.git
+go install github.com/GoHyperrr/hyperrr/cmd/hyperrr@latest
 ```
 
-### 2. Initialize `go.work`
-Initialize a workspace file inside `brewstore-backend/go.work`:
+### 2. Scaffold BrewStore
+Run the `new` command with standard defaults (`-y` flag) to create a new project:
 
-```go
-go 1.26
-
-use (
-	./mdk
-	./hyperrr
-	./commerce
-	./rewards # This is where we will write our custom loyalty module
-)
+```bash
+hyperrr new brewstore -y
+cd brewstore
 ```
+
+This generates a ready-to-go commerce engine structure utilizing the `commerce-full` preset containing standard products, checkout workflows, carts, and order processing.
 
 ---
 
 ## 💻 Step 2: Implement the Rewards Module
 
-Let's write a new standalone module inside the `rewards/` folder.
+Let's scaffold our custom rewards logic. Instead of writing a separate Go module in a sibling repository, we can create a project-local module:
 
-### 1. Create `rewards/go.mod`
-```go
-module github.com/BrewStore/rewards
-
-go 1.26
-
-require (
-	github.com/GoHyperrr/mdk v0.1.0
-	gorm.io/gorm v1.25.0
-)
+```bash
+hyperrr module create rewards
 ```
 
-### 2. Implement the Database Models (`rewards/model.go`)
-Define a schema to track customer reward points:
+This scaffolds a code structure under `modules/rewards/` and automatically registers it inside `configs/hyperrr.yml`.
+
+### 1. Implement the Database Models (`modules/rewards/models.go`)
+Open `modules/rewards/models.go` and define the database schema to track customer loyalty points:
 
 ```go
 package rewards
@@ -65,8 +54,10 @@ type LoyaltyAccount struct {
 }
 ```
 
-### 3. Implement the Module Lifecycle (`rewards/module.go`)
-Create the core module setup. We will subscribe to `commerce.order.completed` events and credit the user's loyalty account.
+### 2. Implement the Module Lifecycle (`modules/rewards/module.go`)
+Open `modules/rewards/module.go`. We will subscribe to `commerce.order.completed` events, compute rewards (10 points per dollar), and credit the customer's account in the database.
+
+Replace the file contents with:
 
 ```go
 package rewards
@@ -74,17 +65,21 @@ package rewards
 import (
 	"context"
 	"encoding/json"
-	"log/slog"
-	
+
 	"github.com/GoHyperrr/mdk"
 )
 
+// Module implements the mdk.Module interface.
 type Module struct {
 	rt mdk.Runtime
 }
 
-func NewModule() mdk.Module {
+func NewModule() *Module {
 	return &Module{}
+}
+
+func init() {
+	mdk.Register(func() mdk.Module { return NewModule() })
 }
 
 func (m *Module) ID() string {
@@ -98,7 +93,7 @@ func (m *Module) Models() []any {
 func (m *Module) Init(ctx context.Context, rt mdk.Runtime) error {
 	m.rt = rt
 
-	// Subscribe to checkout completed event
+	// Subscribe to commerce completion events
 	err := rt.Bus().Subscribe("commerce", "order.completed", m.handleOrderCompleted)
 	if err != nil {
 		return err
@@ -113,7 +108,7 @@ func (m *Module) handleOrderCompleted(ctx context.Context, e mdk.Event) error {
 		CustomerID string  `json:"customer_id"`
 		Amount     float64 `json:"amount"`
 	}
-	
+
 	if err := json.Unmarshal(e.Payload, &payload); err != nil {
 		return err
 	}
@@ -132,7 +127,7 @@ func (m *Module) handleOrderCompleted(ctx context.Context, e mdk.Event) error {
 	account.Points += pointsToCredit
 	err = m.rt.DB().Save(&account).Error
 	if err == nil {
-		m.rt.Logger().Info("Credited loyalty points", 
+		m.rt.Logger().Info("Credited loyalty points",
 			"customer", payload.CustomerID, "points", pointsToCredit)
 	}
 	return err
@@ -143,76 +138,46 @@ func (m *Module) Shutdown(ctx context.Context) error {
 }
 
 func (m *Module) Routes() []mdk.Route {
-	return nil // No custom HTTP routes needed
-}
-
-func init() {
-	mdk.Register(func() mdk.Module {
-		return NewModule()
-	})
+	return nil
 }
 ```
 
 ---
 
-## ⚙️ Step 3: Register the Module inside the Gateway
+## ⚡ Step 3: Run the Build & Boot
 
-Open `hyperrr/hyperrr.yml` and add your rewards module resolve path under `modules`:
-
-```yaml
-version: "0.1.0"
-server:
-  port: 8080
-  host: "0.0.0.0"
-database:
-  driver: "sqlite"
-  dsn: "brewstore.db"
-eventbus:
-  driver: "in_memory"
-modules:
-  - resolve: "github.com/GoHyperrr/commerce/product"
-    id: "commerce.product"
-  - resolve: "github.com/GoHyperrr/commerce/cart"
-    id: "commerce.cart"
-  - resolve: "github.com/GoHyperrr/commerce/order"
-    id: "commerce.order"
-  - resolve: "github.com/BrewStore/rewards" # Add our rewards module here
-    id: "brewstore.rewards"
-```
-
----
-
-## ⚡ Step 4: Run the Builder and Boot
-
-To dynamically compile your rewards module with the GraphQL schema stitching and dependencies resolving:
+Now compile your project and run the server.
 
 ### 1. Compile the Binary
+Run `hyperrr build` from the project root:
+
 ```bash
-cd hyperrr
-go run cmd/builder/main.go
+hyperrr build
 ```
 
-The gateway builder automatically scans `rewards/`, registers your `LoyaltyAccount` model inside the migrations runner, and links the event listener logic cleanly.
+The gateway builder automatically aggregates the GraphQL schemas, registers your `LoyaltyAccount` model inside the migrations runner, adds the rewards import to `cmd/server/imports_generated.go`, and compiles your project-local binary at `bin/hyperrr`.
 
 ### 2. Boot the Server
+Run `hyperrr start` to start the GraphQL + MCP gateways:
+
 ```bash
-./bin/hyperrr --server
+hyperrr start
 ```
 
 You should see log lines indicating migrations ran, and your rewards module initialized:
 ```
 [INFO] BrewStore Rewards Module loaded successfully
-[INFO] Starting GraphQL Gateway at http://localhost:8080/query
+[INFO] Server is ready: http://localhost:8080
 ```
 
 ---
 
-## 🧪 Step 5: Test the Checkout Flow
+## 🧪 Step 4: Test the Checkout Flow
 
-Open the GraphQL playground or make an API request to test the flow:
+Open the GraphQL playground at `http://localhost:8080` (or make a POST request) to test the flow:
 
 ### 1. Create a Product
-Create a product for our Ethiopian beans:
+Create a product for our specialty beans:
 ```graphql
 mutation {
   createProduct(input: {
@@ -240,11 +205,12 @@ mutation {
 }
 ```
 
-Behind the scenes, when the checkout workflow transitions to `completed`:
+Behind the scenes, when the checkout workflow completed:
 1. The `commerce.order` module publishes an `order.completed` event containing the payload `{"customer_id": "cust_alice", "amount": 15.0}`.
-2. The `rewards` module interceptor catches the event.
+2. The `rewards` module catches the event.
 3. It creates a `LoyaltyAccount` for `cust_alice` and credits `150` points.
-4. You will see the event logging output inside your terminal console!
+4. You will see the event logging output inside your terminal console:
 ```
 [INFO] Credited loyalty points customer=cust_alice points=150
 ```
+
