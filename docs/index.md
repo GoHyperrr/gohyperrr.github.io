@@ -34,6 +34,10 @@ Deep dive into product catalogs, variant specifications, taxonomy terms, line it
 ### 8. [E2E Ecommerce Backend Recipe]({{ '/docs/recipe-e2e.html' | relative_url }})
 A step-by-step developer tutorial building and testing a custom rewards module for a specialty coffee store called **BrewStore**.
 
+### 9. [Branching, Versioning & Release Promotion]({{ '/docs/release-management.html' | relative_url }})
+Learn about SemVer guidelines, integration branches flow (`dev` to `main`), and automated release promotion across core modules.
+
+
 ---
 
 ## 📦 Core Component Stack
